@@ -12,6 +12,7 @@ $fields = [
     'cancellation_policy', 'privacy_last_updated',
     'booking_notice', 'emergency_notice', 'facebook_url', 'instagram_url',
     'events_section_enabled', 'article_stale_after_days', 'analytics_enabled',
+    'billing_enabled', 'min_notice_hours', 'booking_horizon_days', 'privacy_policy_reviewed',
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -34,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    $checkboxFields = ['show_address', 'offers_remote_sessions', 'events_section_enabled', 'analytics_enabled'];
+    $checkboxFields = ['show_address', 'offers_remote_sessions', 'events_section_enabled', 'analytics_enabled', 'billing_enabled', 'privacy_policy_reviewed'];
     foreach ($fields as $field) {
         if (in_array($field, $checkboxFields, true)) {
             set_setting($field, !empty($_POST[$field]) ? '1' : '0');
@@ -123,6 +124,14 @@ require __DIR__ . '/includes/layout_top.php';
   </div>
   <div class="form-group"><label>تنبيه بعد كم يوم يُعتبر المقال المنشور بحاجة مراجعة</label><input type="number" name="article_stale_after_days" value="<?= e($values['article_stale_after_days']) ?>" style="max-width:120px;"></div>
   <div class="form-group"><label><input type="checkbox" name="analytics_enabled" value="1" <?= $values['analytics_enabled'] === '1' ? 'checked' : '' ?> style="width:auto;"> فعّل عدادات الزيارات المجهولة (بدون أي بيانات شخصية)</label></div>
+
+  <h3 style="margin-top:34px;">العيادة: الحجز الذاتي والفوترة</h3>
+  <div class="form-row-2">
+    <div class="form-group"><label>أقل مدة إشعار مسبق قبل الموعد (ساعات)</label><input type="number" name="min_notice_hours" min="0" value="<?= e($values['min_notice_hours']) ?>"></div>
+    <div class="form-group"><label>أفق الحجز الذاتي (كم يوم قدّام يظهر بالتقويم العام)</label><input type="number" name="booking_horizon_days" min="1" max="60" value="<?= e($values['booking_horizon_days']) ?>"></div>
+  </div>
+  <div class="form-group"><label><input type="checkbox" name="billing_enabled" value="1" <?= $values['billing_enabled'] === '1' ? 'checked' : '' ?> style="width:auto;"> فعّل قسم الفوترة والمدفوعات اليدوية</label></div>
+  <div class="form-group"><label><input type="checkbox" name="privacy_policy_reviewed" value="1" <?= $values['privacy_policy_reviewed'] === '1' ? 'checked' : '' ?> style="width:auto;"> راجعت/اعتمدت سياسة الخصوصية الحالية (لشاشة جاهزية التشغيل)</label></div>
 
   <button type="submit" class="btn btn-primary" style="margin-top:14px;">حفظ كل الإعدادات</button>
 </form>

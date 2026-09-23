@@ -11,6 +11,9 @@ $flashes = flash_get_all();
 $canSeeContent = $adminUser && in_array($adminUser['role'], ['owner', 'editor', 'reviewer'], true);
 $canSeeBookings = $adminUser && in_array($adminUser['role'], ['owner', 'bookings_manager'], true);
 $canReview = $adminUser && in_array($adminUser['role'], ['owner', 'reviewer'], true);
+$canSeeClinicOps = $adminUser && in_array($adminUser['role'], ['owner', 'bookings_manager'], true);
+$canSeeClinical = $adminUser && in_array($adminUser['role'], ['owner', 'reviewer'], true);
+$canSeeFinancial = $adminUser && in_array($adminUser['role'], ['owner', 'financial'], true);
 $isOwner = $adminUser && $adminUser['role'] === 'owner';
 ?><!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -50,10 +53,30 @@ $isOwner = $adminUser && $adminUser['role'] === 'owner';
       <li><a href="/admin/reply-templates.php" class="<?= $activeNav === 'templates' ? 'active' : '' ?>">قوالب الردود</a></li>
       <?php endif; ?>
 
+      <?php if ($canSeeClinicOps): ?>
+      <li class="nav-section">العيادة</li>
+      <li><a href="/admin/calendar.php" class="<?= $activeNav === 'calendar' ? 'active' : '' ?>">📅 التقويم</a></li>
+      <li><a href="/admin/clinic-hours.php" class="<?= $activeNav === 'clinic-hours' ? 'active' : '' ?>">ساعات العمل</a></li>
+      <li><a href="/admin/patients.php" class="<?= $activeNav === 'patients' ? 'active' : '' ?>">المرضى</a></li>
+      <li><a href="/admin/ops-tasks.php" class="<?= $activeNav === 'ops-tasks' ? 'active' : '' ?>">مهام تشغيلية</a></li>
+      <?php endif; ?>
+
+      <?php if ($canSeeFinancial): ?>
+      <li class="nav-section">المالية</li>
+      <li><a href="/admin/billing.php" class="<?= $activeNav === 'billing' ? 'active' : '' ?>">الفواتير والمدفوعات</a></li>
+      <?php endif; ?>
+
+      <?php if ($isOwner || $canSeeClinicOps || $canSeeFinancial): ?>
+      <li class="nav-section">التقارير</li>
+      <li><a href="/admin/reports.php" class="<?= $activeNav === 'reports' ? 'active' : '' ?>">التقارير</a></li>
+      <?php endif; ?>
+
       <?php if ($isOwner): ?>
       <li class="nav-section">الإعدادات</li>
+      <li><a href="/admin/readiness.php" class="<?= $activeNav === 'readiness' ? 'active' : '' ?>">✅ جاهزية التشغيل</a></li>
       <li><a href="/admin/settings.php" class="<?= $activeNav === 'settings' ? 'active' : '' ?>">الملف والإعدادات العامة</a></li>
       <li><a href="/admin/notifications-settings.php" class="<?= $activeNav === 'notifications' ? 'active' : '' ?>">إعدادات الإشعارات والبريد</a></li>
+      <li><a href="/admin/clinical-settings.php" class="<?= $activeNav === 'clinical-settings' ? 'active' : '' ?>">الملاحظات السريرية (إعداد)</a></li>
       <li><a href="/admin/subscribers.php" class="<?= $activeNav === 'subscribers' ? 'active' : '' ?>">النشرة البريدية</a></li>
       <li><a href="/admin/analytics.php" class="<?= $activeNav === 'analytics' ? 'active' : '' ?>">إحصاءات الزيارات</a></li>
       <li><a href="/admin/users.php" class="<?= $activeNav === 'users' ? 'active' : '' ?>">المستخدمون والصلاحيات</a></li>

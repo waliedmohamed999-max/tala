@@ -3,7 +3,7 @@ require_once __DIR__ . '/../includes/auth.php';
 require_role('owner');
 $activeNav = 'users';
 
-$roles = ['editor', 'reviewer', 'bookings_manager', 'owner'];
+$roles = ['editor', 'reviewer', 'bookings_manager', 'financial', 'owner'];
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : null;
 $user = ['id' => null, 'name' => '', 'email' => '', 'role' => 'editor'];
@@ -15,8 +15,14 @@ if ($id) {
     $user = $found;
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'revoke_sessions' && csrf_verify()) {
+    revoke_user_sessions((int)($_POST['id'] ?? 0));
+    flash_set('success', 'تم إبطال جلسات المستخدم. رح يحتاج يسجّل دخول من جديد.');
+    redirect('/admin/user-edit.php?id=' . (int)($_POST['id'] ?? 0));
+}
+
 $errors = [];
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') !== 'revoke_sessions') {
     if (!csrf_verify()) { $errors[] = 'في مشكلة تقنية. جرّب من جديد.'; }
     $user['name'] = trim($_POST['name'] ?? '');
     $user['email'] = trim($_POST['email'] ?? '');
@@ -78,12 +84,26 @@ require __DIR__ . '/includes/layout_top.php';
       <select name="role">
         <option value="editor" <?= $user['role'] === 'editor' ? 'selected' : '' ?>>محرر محتوى — ينشئ ويعدّل، يرسل للمراجعة فقط</option>
         <option value="reviewer" <?= $user['role'] === 'reviewer' ? 'selected' : '' ?>>مراجع مهني — يعتمد وينشر المحتوى</option>
-        <option value="bookings_manager" <?= $user['role'] === 'bookings_manager' ? 'selected' : '' ?>>مسؤول حجوزات — طلبات المواعيد ورسائل التواصل فقط</option>
+        <option value="bookings_manager" <?= $user['role'] === 'bookings_manager' ? 'selected' : '' ?>>مسؤول حجوزات — طلبات المواعيد، التقويم، والمرضى (بيانات إدارية فقط)</option>
+        <option value="financial" <?= $user['role'] === 'financial' ? 'selected' : '' ?>>مسؤول مالي — الفواتير والمدفوعات فقط</option>
         <option value="owner" <?= $user['role'] === 'owner' ? 'selected' : '' ?>>مالك الموقع — صلاحيات كاملة</option>
       </select>
     </div>
     <button type="submit" class="btn btn-primary">حفظ</button>
   </form>
 </div>
+
+<?php if ($id): ?>
+<div class="admin-card" style="margin-top:20px;">
+  <h3 style="margin-top:0;">إبطال الجلسات</h3>
+  <p class="field-hint">بيسجّل خروج المستخدم فورًا من كل الأجهزة يلي مسجل دخول فيها حاليًا (مفيد لو جهازه ضاع أو انسرقت كلمة مروره). بيحتاج يسجّل دخول من جديد.</p>
+  <form method="post" onsubmit="return confirm('إبطال كل جلسات هالمستخدم الحالية؟');">
+    <?= csrf_field() ?>
+    <input type="hidden" name="action" value="revoke_sessions">
+    <input type="hidden" name="id" value="<?= (int)$id ?>">
+    <button type="submit" class="btn btn-outline">إبطال كل الجلسات</button>
+  </form>
+</div>
+<?php endif; ?>
 
 <?php require __DIR__ . '/includes/layout_bottom.php'; ?>

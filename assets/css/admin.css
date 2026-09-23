@@ -96,6 +96,32 @@ body.admin-body {
 }
 .action-links .danger { color: var(--color-danger); }
 
+/* Extra status-badge colors for clinic-ops statuses not covered by style.css's set */
+.status-noshow { background: #F3E8D9; color: #8A5A00; }
+.status-paused { background: var(--color-danger-bg); color: var(--color-danger); }
+
+/* Calendar grid (admin/calendar.php) */
+.calendar-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
+@media (max-width: 900px) { .calendar-week { grid-template-columns: 1fr; } }
+.calendar-day { background: #fff; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 12px; min-height: 120px; }
+.calendar-day-head { font-weight: 700; font-size: .85rem; margin-bottom: 8px; color: var(--color-text-muted); }
+.calendar-slot { display: block; width: 100%; text-align: start; font-size: .82rem; padding: 6px 8px; border-radius: var(--radius-sm); margin-bottom: 6px; border: 1px solid var(--color-border); background: var(--color-bg-alt); cursor: pointer; }
+.calendar-slot.is-free { border-color: var(--color-sage-dark); color: var(--color-sage-dark); background: #fff; }
+.calendar-slot.is-busy { background: var(--color-bg-alt); color: var(--color-text-muted); cursor: default; }
+
+/* Public availability picker (book.php) */
+.slot-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.slot-btn { padding: 9px 14px; border-radius: 999px; border: 1.5px solid var(--color-border); background: #fff; font-family: inherit; font-size: .88rem; cursor: pointer; }
+.slot-btn:hover, .slot-btn:focus-visible { border-color: var(--color-sage-dark); background: var(--color-sage-light); }
+.slot-btn.is-selected { border-color: var(--color-sage-dark); background: var(--color-sage-dark); color: #fff; }
+
+/* Printable receipt (admin/receipt.php) */
+@media print {
+  .no-print { display: none !important; }
+  body.admin-body { background: #fff; }
+  .admin-shell { display: block; }
+}
+
 .login-shell {
   min-height: 100vh;
   display: flex;

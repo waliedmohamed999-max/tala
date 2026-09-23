@@ -8,7 +8,7 @@ if (current_locale() === 'en') {
 }
 
 $slug = $_GET['slug'] ?? '';
-$stmt = db()->prepare('SELECT * FROM services WHERE slug = ? AND is_published = 1');
+$stmt = db()->prepare("SELECT * FROM services WHERE slug = ? AND workflow_status = 'published' AND show_on_website = 1");
 $stmt->execute([$slug]);
 $service = $stmt->fetch();
 
@@ -54,8 +54,14 @@ require __DIR__ . '/includes/header.php';
     <div class="article-body"><?= $service['description'] ?></div>
   <?php endif; ?>
 
+  <?php if ($service['cancellation_policy']): ?>
+    <div class="card" style="margin-top:20px;"><h3>سياسة الإلغاء وإعادة الجدولة</h3><p><?= nl2br(e($service['cancellation_policy'])) ?></p></div>
+  <?php endif; ?>
+
   <div class="notice-inline">
-    التفاصيل النهائية (المدة، السعر، والتوفر) قابلة للتأكيد وقت التواصل معنا.
+    <?= $service['bookable_online']
+      ? 'فيك تشوف الفترات المتاحة فعليًا وتحجز مباشرة من صفحة طلب الموعد.'
+      : 'التفاصيل النهائية (المدة، السعر، والتوفر) قابلة للتأكيد وقت التواصل معنا.' ?>
   </div>
 
   <div class="text-center" style="margin-top:34px;">

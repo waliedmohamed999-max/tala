@@ -4,8 +4,9 @@ require_once __DIR__ . '/includes/notify.php';
 require_once __DIR__ . '/includes/i18n.php';
 
 $locale = current_locale();
-$services = published_services();
+$services = bookable_form_services();
 $offersRemote = setting_bool('offers_remote_sessions');
+$bookableServiceIds = array_values(array_map(fn($s) => (int)$s['id'], array_filter($services, fn($s) => (int)$s['bookable_online'] === 1 && (int)$s['duration_minutes'] > 0)));
 $sent = isset($_GET['sent']);
 $refCode = $sent ? trim($_GET['ref'] ?? '') : '';
 
@@ -17,6 +18,8 @@ $old = [
     'location_pref' => 'homs',
     'time_pref' => '',
     'notes' => '',
+    'starts_at' => '',
+    'ends_at' => '',
 ];
 $errors = [];
 
@@ -37,6 +40,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $old['location_pref'] = $_POST['location_pref'] ?? 'homs';
     $old['time_pref'] = trim($_POST['time_pref'] ?? '');
     $old['notes'] = trim($_POST['notes'] ?? '');
+    $old['starts_at'] = trim($_POST['starts_at'] ?? '');
+    $old['ends_at'] = trim($_POST['ends_at'] ?? '');
     $consent = !empty($_POST['privacy_consent']);
 
     if (!csrf_verify()) {
@@ -109,11 +114,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = $msg('في عدد كبير من الطلبات من نفس المصدر. جرّب بعد شوي.', 'Too many requests from the same source. Please try again shortly.');
     }
 
+    // Self-service slot booking: only trusted if the service really supports
+    // it AND the exact slot the visitor picked still shows up when we
+    // recompute availability ourselves — never trust starts_at/ends_at as
+    // posted. The actual double-booking guard is create_appointment_atomically()
+    // below regardless; this is just an early, friendlier validation.
+    $wantsSlot = $serviceId && in_array($serviceId, $bookableServiceIds, true) && $old['starts_at'] !== '';
+    $reservedAppointmentId = null;
+    if (empty($errors) && $wantsSlot) {
+        $slotDate = substr($old['starts_at'], 0, 10);
+        $daySlots = compute_available_slots($serviceId, $slotDate, $slotDate)[$slotDate] ?? [];
+        $matched = null;
+        foreach ($daySlots as $s) {
+            if ($s['starts_at'] === $old['starts_at']) { $matched = $s; break; }
+        }
+        if (!$matched) {
+            $errors[] = $msg('للأسف الفترة يلي اخترتها ما عادت متاحة. اختر فترة تانية من فضلك.', "Sorry, the time slot you picked is no longer available. Please choose another one.");
+        }
+    }
+
+    if (empty($errors) && $wantsSlot) {
+        $slotDate = substr($old['starts_at'], 0, 10);
+        $daySlots = compute_available_slots($serviceId, $slotDate, $slotDate)[$slotDate] ?? [];
+        $matched = null;
+        foreach ($daySlots as $s) {
+            if ($s['starts_at'] === $old['starts_at']) { $matched = $s; break; }
+        }
+        $result = create_appointment_atomically([
+            'service_id' => $serviceId,
+            'starts_at' => $matched['starts_at'],
+            'ends_at' => $matched['ends_at'],
+            'location_mode' => $old['location_pref'] === 'remote' ? 'remote' : ($old['location_pref'] === 'homs' ? 'in_person' : null),
+            'status' => 'pending_confirmation',
+            'created_by' => 'نموذج الموقع (حجز ذاتي)',
+        ]);
+        if (!$result['success']) {
+            $errors[] = $msg('للأسف الفترة يلي اخترتها انحجزت للتو من زائر تاني. اختر فترة تانية من فضلك.', 'Sorry, the time slot you picked was just booked by someone else. Please choose another one.');
+        } else {
+            $reservedAppointmentId = $result['appointment_id'];
+        }
+    }
+
     if (empty($errors)) {
         $referenceCode = strtoupper(substr(bin2hex(random_bytes(4)), 0, 6));
         $stmt = db()->prepare('INSERT INTO appointment_requests
-            (reference_code, name, contact_method, contact_value, service_id, location_pref, time_pref, notes, privacy_consent, ip_hash)
-            VALUES (:ref, :name, :method, :value, :service_id, :location, :time_pref, :notes, 1, :ip)');
+            (reference_code, name, contact_method, contact_value, service_id, location_pref, time_pref, notes, privacy_consent, ip_hash, converted_appointment_id)
+            VALUES (:ref, :name, :method, :value, :service_id, :location, :time_pref, :notes, 1, :ip, :converted_id)');
         $stmt->execute([
             ':ref' => $referenceCode,
             ':name' => $old['name'],
@@ -121,11 +167,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ':value' => $old['contact_value'],
             ':service_id' => $serviceId,
             ':location' => $old['location_pref'],
-            ':time_pref' => $old['time_pref'],
+            ':time_pref' => $reservedAppointmentId ? ($msg('محجوز ذاتيًا: ', 'Self-booked: ') . $old['starts_at']) : $old['time_pref'],
             ':notes' => $old['notes'],
             ':ip' => client_ip_hash(),
+            ':converted_id' => $reservedAppointmentId,
         ]);
         $newId = db()->lastInsertId();
+        if ($reservedAppointmentId) {
+            db()->prepare('UPDATE appointments SET request_id = ? WHERE id = ?')->execute([$newId, $reservedAppointmentId]);
+        }
         $log = db()->prepare('INSERT INTO appointment_status_log (request_id, old_status, new_status, changed_by) VALUES (?, NULL, ?, ?)');
         $log->execute([$newId, 'new', 'نموذج الموقع']);
 
@@ -226,6 +276,16 @@ require __DIR__ . '/includes/header.php';
           </div>
           <?php endif; ?>
 
+          <input type="hidden" id="starts_at" name="starts_at" value="<?= e($old['starts_at']) ?>">
+          <input type="hidden" id="ends_at" name="ends_at" value="<?= e($old['ends_at']) ?>">
+          <div class="form-group" id="slotPicker" style="display:none;">
+            <label><?= $msg('اختر تاريخ ووقت الجلسة', 'Choose a session date and time') ?> <span class="required-mark">*</span></label>
+            <p class="field-hint"><?= $msg('هاي فترات متاحة فعليًا بالتقويم — اختيارك بيحجز الفترة فورًا، وبنتواصل معك للتأكيد النهائي.', "These are real open slots on the calendar — picking one reserves it immediately, and we'll reach out to confirm.") ?></p>
+            <select id="slotDate" style="margin-bottom:10px;"></select>
+            <div class="slot-grid" id="slotGrid"></div>
+            <p class="field-hint" id="slotStatus"></p>
+          </div>
+
           <?php if ($offersRemote): ?>
           <div class="form-group">
             <label><?= $msg('طريقة الحضور', 'How you\'ll attend') ?> <span class="required-mark">*</span></label>
@@ -287,8 +347,90 @@ require __DIR__ . '/includes/header.php';
         var editBtn = document.getElementById('editBtn');
         var table = document.getElementById('reviewTable');
         var rowLabels = <?= $locale === 'en'
-          ? "{name:'Name',method:'Contact method',value:'Contact details',service:'Session type',location:'Attendance',time:'Preferred time',notes:'Notes'}"
-          : "{name:'الاسم',method:'وسيلة التواصل',value:'بيانات التواصل',service:'نوع الجلسة',location:'طريقة الحضور',time:'الوقت المفضل',notes:'ملاحظات'}" ?>;
+          ? "{name:'Name',method:'Contact method',value:'Contact details',service:'Session type',location:'Attendance',time:'Preferred time',notes:'Notes',slot:'Selected session time'}"
+          : "{name:'الاسم',method:'وسيلة التواصل',value:'بيانات التواصل',service:'نوع الجلسة',location:'طريقة الحضور',time:'الوقت المفضل',notes:'ملاحظات',slot:'وقت الجلسة المختار'}" ?>;
+
+        // --- Self-service slot picker ---------------------------------
+        var bookableServiceIds = <?= json_encode($bookableServiceIds) ?>;
+        var serviceSelect = document.getElementById('service_id');
+        var slotPicker = document.getElementById('slotPicker');
+        var slotDateSelect = document.getElementById('slotDate');
+        var slotGrid = document.getElementById('slotGrid');
+        var slotStatus = document.getElementById('slotStatus');
+        var startsAtField = document.getElementById('starts_at');
+        var endsAtField = document.getElementById('ends_at');
+        var slotsData = {};
+        var textLoading = <?= $locale === 'en' ? "'Loading available times…'" : "'عم نحمّل الفترات المتاحة…'" ?>;
+        var textNoSlots = <?= $locale === 'en' ? "'No open slots in the coming days. Please use the general request below instead.'" : "'ما في فترات متاحة بالأيام الجاية. فيك تستخدم الطلب العام تحت بدل هيك.'" ?>;
+        var textPicked = <?= $locale === 'en' ? "'Selected: '" : "'اخترت: '" ?>;
+        var textError = <?= $locale === 'en' ? "'Could not load available times. Please try again.'" : "'تعذّر تحميل الفترات المتاحة. جرّب مرة تانية.'" ?>;
+
+        function renderSlotsForDate(dateStr) {
+          slotGrid.innerHTML = '';
+          startsAtField.value = '';
+          endsAtField.value = '';
+          var daySlots = slotsData[dateStr] || [];
+          daySlots.forEach(function (s) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'slot-btn';
+            btn.textContent = s.start;
+            btn.addEventListener('click', function () {
+              slotGrid.querySelectorAll('.slot-btn').forEach(function (b) { b.classList.remove('is-selected'); });
+              btn.classList.add('is-selected');
+              startsAtField.value = s.starts_at;
+              endsAtField.value = s.ends_at;
+              slotStatus.textContent = textPicked + dateStr + ' ' + s.start;
+            });
+            slotGrid.appendChild(btn);
+          });
+        }
+
+        function loadAvailability(serviceId) {
+          slotPicker.style.display = 'block';
+          slotStatus.textContent = textLoading;
+          slotGrid.innerHTML = '';
+          slotDateSelect.innerHTML = '';
+          startsAtField.value = '';
+          endsAtField.value = '';
+          fetch('/book-availability.php?service_id=' + encodeURIComponent(serviceId))
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+              slotsData = data.slots || {};
+              var dates = Object.keys(slotsData);
+              if (dates.length === 0) {
+                slotStatus.textContent = textNoSlots;
+                return;
+              }
+              dates.forEach(function (d) {
+                var opt = document.createElement('option');
+                opt.value = d;
+                opt.textContent = d;
+                slotDateSelect.appendChild(opt);
+              });
+              slotStatus.textContent = '';
+              renderSlotsForDate(dates[0]);
+            })
+            .catch(function () { slotStatus.textContent = textError; });
+        }
+
+        slotDateSelect.addEventListener('change', function () { renderSlotsForDate(this.value); });
+
+        function onServiceChange() {
+          if (!serviceSelect) return;
+          var val = parseInt(serviceSelect.value, 10);
+          if (bookableServiceIds.indexOf(val) !== -1) {
+            loadAvailability(val);
+          } else {
+            slotPicker.style.display = 'none';
+            startsAtField.value = '';
+            endsAtField.value = '';
+          }
+        }
+        if (serviceSelect) {
+          serviceSelect.addEventListener('change', onServiceChange);
+          if (serviceSelect.value) { onServiceChange(); }
+        }
 
         function labelFor(name, value) {
           var el = form.querySelector('[name="' + name + '"]' + (value !== undefined ? '[value="' + value + '"]' : ''));
@@ -299,6 +441,11 @@ require __DIR__ . '/includes/header.php';
 
         reviewBtn.addEventListener('click', function () {
           if (!form.checkValidity()) { form.reportValidity(); return; }
+          if (slotPicker.style.display !== 'none' && !startsAtField.value) {
+            slotStatus.textContent = <?= $locale === 'en' ? "'Please pick a session time above before continuing.'" : "'اختر وقت الجلسة فوق قبل ما تكمل.'" ?>;
+            slotPicker.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+          }
 
           var rows = [];
           rows.push([rowLabels.name, form.name.value]);
@@ -307,9 +454,10 @@ require __DIR__ . '/includes/header.php';
           rows.push([rowLabels.value, form.contact_value.value]);
           var serviceSel = form.querySelector('[name="service_id"]');
           if (serviceSel) rows.push([rowLabels.service, serviceSel.options[serviceSel.selectedIndex].text]);
+          if (startsAtField.value) rows.push([rowLabels.slot, startsAtField.value]);
           var loc = form.querySelector('[name="location_pref"]:checked');
           if (loc) rows.push([rowLabels.location, labelFor('location_pref', loc.value)]);
-          if (form.time_pref.value) rows.push([rowLabels.time, form.time_pref.value]);
+          if (!startsAtField.value && form.time_pref.value) rows.push([rowLabels.time, form.time_pref.value]);
           if (form.notes.value) rows.push([rowLabels.notes, form.notes.value]);
 
           table.innerHTML = rows.map(function (r) {

@@ -25,16 +25,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_verify()) {
         $upd->execute([$id]);
         flash_set('success', 'تم إرجاع المقالة كمسودة.');
     } elseif ($action === 'service_publish') {
-        $upd = db()->prepare("UPDATE services SET is_published=1, review_note=NULL, reviewed_by=?, reviewed_at=datetime('now'), updated_at=datetime('now') WHERE id=?");
-        $upd->execute([$adminUser['name'], $id]);
+        set_service_workflow_status($id, 'published', $adminUser['name']);
         flash_set('success', 'تم نشر الخدمة.');
     } elseif ($action === 'service_request_changes') {
         if ($note === '') {
             flash_set('error', 'اكتب ملاحظة توضح شو محتاج تعديل.');
         } else {
-            $upd = db()->prepare("UPDATE services SET review_note=?, reviewed_by=?, reviewed_at=datetime('now'), updated_at=datetime('now') WHERE id=?");
-            $upd->execute([$note, $adminUser['name'], $id]);
-            flash_set('success', 'تم تسجيل ملاحظتك على الخدمة.');
+            set_service_workflow_status($id, 'draft', $adminUser['name'], $note);
+            flash_set('success', 'تم إرجاع الخدمة كمسودة مع ملاحظتك.');
         }
     }
     redirect('/admin/review-queue.php');
@@ -42,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_verify()) {
 
 $pendingArticles = db()->query("SELECT a.*, c.name AS category_name FROM articles a LEFT JOIN categories c ON c.id = a.category_id WHERE a.workflow_status = 'in_review' ORDER BY a.updated_at")->fetchAll();
 $changesRequested = db()->query("SELECT a.* FROM articles a WHERE a.workflow_status = 'changes_requested' ORDER BY a.updated_at DESC")->fetchAll();
-$pendingServices = db()->query("SELECT * FROM services WHERE is_published = 0 ORDER BY sort_order")->fetchAll();
+$pendingServices = db()->query("SELECT * FROM services WHERE workflow_status = 'pending_review' ORDER BY sort_order")->fetchAll();
 
 $pageTitle = 'قائمة الاعتماد';
 require __DIR__ . '/includes/layout_top.php';
@@ -104,9 +102,9 @@ require __DIR__ . '/includes/layout_top.php';
   </div>
 <?php endif; ?>
 
-<h2 style="margin-top:20px;">خدمات غير منشورة (<?= count($pendingServices) ?>)</h2>
+<h2 style="margin-top:20px;">خدمات بانتظار الاعتماد (<?= count($pendingServices) ?>)</h2>
 <?php if (empty($pendingServices)): ?>
-  <p class="field-hint">كل الخدمات منشورة حاليًا.</p>
+  <p class="field-hint">ما في خدمات بانتظار الاعتماد حاليًا.</p>
 <?php else: ?>
   <?php foreach ($pendingServices as $s): ?>
     <div class="admin-card" style="margin-bottom:16px;">

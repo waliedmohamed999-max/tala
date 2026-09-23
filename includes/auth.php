@@ -2,11 +2,13 @@
 require_once __DIR__ . '/functions.php';
 
 /**
- * Roles: owner | editor | reviewer | bookings_manager
+ * Roles: owner | editor | reviewer | bookings_manager | financial
  *   owner            -> everything
  *   editor           -> create/edit content, can only move it to in_review (cannot self-publish)
- *   reviewer         -> approve + publish content (the professional review step), can also edit
- *   bookings_manager -> appointments + contact messages only, no content access
+ *   reviewer         -> approve + publish content (the professional review step); also the
+ *                        clinical-access role (Tala herself) — see require_clinical_access()
+ *   bookings_manager -> appointments/calendar/patients (administrative fields only) + contact messages
+ *   financial        -> billing/invoices only, plus the minimal patient name needed for a receipt
  */
 
 function current_admin(): ?array
@@ -19,6 +21,15 @@ function current_admin(): ?array
         $stmt = db()->prepare('SELECT * FROM admin_users WHERE id = ? AND is_active = 1');
         $stmt->execute([$_SESSION['admin_id']]);
         $user = $stmt->fetch() ?: false;
+
+        // Session revocation: an owner can force-logout a user (e.g. a lost
+        // device) from admin/user-edit.php, which stamps force_logout_at.
+        // Any session whose login happened before that stamp is invalidated
+        // here rather than trusting the still-valid PHP session cookie.
+        if ($user && $user['force_logout_at'] && (!isset($_SESSION['admin_login_at']) || $_SESSION['admin_login_at'] < $user['force_logout_at'])) {
+            logout_admin();
+            $user = false;
+        }
     }
     return $user ?: null;
 }
@@ -61,6 +72,33 @@ function require_bookings_access(): array
     return require_role('owner', 'bookings_manager');
 }
 
+/**
+ * Calendar/patients administrative access (schedule, patient contact info,
+ * archiving) — NOT clinical notes. See require_clinical_access() below.
+ */
+function require_clinic_ops_access(): array
+{
+    return require_role('owner', 'bookings_manager');
+}
+
+/**
+ * Clinical file access (notes, attachments) — owner + reviewer only, since
+ * "reviewer" is the professional-review role Tala herself holds. A distinct
+ * function name (rather than reusing require_review_access() directly) so a
+ * future split between "content reviewer" and "clinician" roles doesn't
+ * require touching every clinical call site.
+ */
+function require_clinical_access(): array
+{
+    return require_role('owner', 'reviewer');
+}
+
+/** Billing/invoices access. */
+function require_financial_access(): array
+{
+    return require_role('owner', 'financial');
+}
+
 function can_review(array $user): bool
 {
     return in_array($user['role'], ['owner', 'reviewer'], true);
@@ -73,6 +111,7 @@ function role_label(string $role): string
         'editor' => 'محرر محتوى',
         'reviewer' => 'مراجع مهني',
         'bookings_manager' => 'مسؤول حجوزات',
+        'financial' => 'مسؤول مالي',
     ][$role] ?? $role;
 }
 
@@ -87,6 +126,7 @@ function attempt_login(string $email, string $password): ?array
     if ($user && password_verify($password, $user['password_hash'])) {
         session_regenerate_id(true);
         $_SESSION['admin_id'] = $user['id'];
+        $_SESSION['admin_login_at'] = date('Y-m-d H:i:s');
         $upd = db()->prepare("UPDATE admin_users SET last_login_at = datetime('now') WHERE id = ?");
         $upd->execute([$user['id']]);
         return $user;
@@ -107,4 +147,11 @@ function logout_admin(): void
 function any_admin_exists(): bool
 {
     return (int)db()->query('SELECT COUNT(*) FROM admin_users')->fetchColumn() > 0;
+}
+
+/** Invalidates every currently active session for this user (see current_admin()'s force_logout_at check). */
+function revoke_user_sessions(int $userId): void
+{
+    $upd = db()->prepare("UPDATE admin_users SET force_logout_at = datetime('now') WHERE id = ?");
+    $upd->execute([$userId]);
 }

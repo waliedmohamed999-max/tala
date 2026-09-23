@@ -6,7 +6,9 @@ $activeNav = 'appointments';
 
 $statusLabels = [
     'new' => 'جديد',
+    'in_review' => 'قيد المراجعة',
     'contacting' => 'جارٍ التواصل',
+    'awaiting_visitor_reply' => 'بانتظار رد الزائر',
     'confirmed' => 'مؤكد',
     'cancelled' => 'أُلغي',
     'done' => 'مكتمل',
@@ -34,6 +36,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $log->execute([$id, $oldStatus, $newStatus, $adminUser['name']]);
         flash_set('success', 'تم تحديث حالة الطلب.');
     }
+    redirect('/admin/appointments.php?id=' . $id);
+}
+
+// --- convert an appointment request into a patient record (explicit staff action only) ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'convert_to_patient') {
+    if (!csrf_verify()) {
+        flash_set('error', 'في مشكلة تقنية. جرّب من جديد.');
+        redirect('/admin/appointments.php');
+    }
+    $id = (int)($_POST['id'] ?? 0);
+    $reqStmt = db()->prepare('SELECT id FROM appointment_requests WHERE id = ?');
+    $reqStmt->execute([$id]);
+    if ($reqStmt->fetch()) {
+        $patientId = create_patient_from_request($id, $adminUser['name']);
+        if ($patientId) {
+            flash_set('success', 'تم إنشاء ملف مريض من هالطلب.');
+            redirect('/admin/patient-view.php?id=' . $patientId);
+        }
+    }
+    flash_set('error', 'تعذّر إنشاء ملف مريض.');
     redirect('/admin/appointments.php?id=' . $id);
 }
 
@@ -103,6 +125,29 @@ require __DIR__ . '/includes/layout_top.php';
       <p><strong>الحالة الحالية:</strong> <span class="status-badge status-<?= e($detail['status']) ?>"><?= e($statusLabels[$detail['status']] ?? $detail['status']) ?></span></p>
     </div>
     <?php if ($detail['notes']): ?><p><strong>ملاحظات:</strong><br><?= nl2br(e($detail['notes'])) ?></p><?php endif; ?>
+
+    <div style="display:flex; gap:10px; flex-wrap:wrap; margin:16px 0;">
+      <?php if ($detail['converted_appointment_id']): ?>
+        <a href="/admin/appointment-edit.php?id=<?= (int)$detail['converted_appointment_id'] ?>" class="btn btn-outline btn-sm">📅 عرض الموعد المجدول</a>
+      <?php else: ?>
+        <a href="/admin/appointment-edit.php?request_id=<?= (int)$detail['id'] ?>" class="btn btn-outline btn-sm">📅 جدولة موعد فعلي</a>
+      <?php endif; ?>
+      <?php
+        $existingPatient = db()->prepare("SELECT id FROM patients WHERE contact_value = ? LIMIT 1");
+        $existingPatient->execute([$detail['contact_value']]);
+        $patientId = $existingPatient->fetchColumn();
+      ?>
+      <?php if ($patientId): ?>
+        <a href="/admin/patient-view.php?id=<?= (int)$patientId ?>" class="btn btn-outline btn-sm">👤 عرض ملف المريض</a>
+      <?php else: ?>
+        <form method="post" onsubmit="return confirm('إنشاء ملف مريض جديد من بيانات هالطلب؟');">
+          <?= csrf_field() ?>
+          <input type="hidden" name="action" value="convert_to_patient">
+          <input type="hidden" name="id" value="<?= (int)$detail['id'] ?>">
+          <button type="submit" class="btn btn-outline btn-sm">👤 تحويل لملف مريض</button>
+        </form>
+      <?php endif; ?>
+    </div>
 
     <?php
     $templates = db()->query('SELECT * FROM reply_templates ORDER BY id')->fetchAll();

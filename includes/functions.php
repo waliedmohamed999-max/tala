@@ -442,12 +442,392 @@ function published_categories(): array
     return db()->query('SELECT * FROM categories ORDER BY sort_order, name')->fetchAll();
 }
 
+/** Services shown on the public marketing pages (services.php, service.php, homepage teaser). */
 function published_services(): array
 {
-    return db()->query('SELECT * FROM services WHERE is_published = 1 ORDER BY sort_order, name')->fetchAll();
+    return db()->query("SELECT * FROM services WHERE workflow_status = 'published' AND show_on_website = 1 ORDER BY sort_order, name")->fetchAll();
+}
+
+/**
+ * Every published service, regardless of show_on_website — used by the
+ * booking form's service dropdown, which is a separate surface from the
+ * marketing pages (a service can be requestable without being publicly
+ * listed, or listed without being requestable — see the plan's note on
+ * show_on_website vs bookable_online being independent toggles).
+ */
+function bookable_form_services(): array
+{
+    return db()->query("SELECT * FROM services WHERE workflow_status = 'published' ORDER BY sort_order, name")->fetchAll();
 }
 
 function published_faqs(): array
 {
     return db()->query('SELECT * FROM faqs WHERE is_published = 1 ORDER BY sort_order')->fetchAll();
+}
+
+// =========================================================================
+// Clinic operations: calendar/scheduling, patients, billing, clinical notes,
+// access auditing. See includes/db.php's migrate_clinic_ops() for schema.
+// =========================================================================
+
+/**
+ * Services now go through a small workflow (draft -> pending_review ->
+ * published -> paused) layered on top of the original is_published boolean,
+ * which stays in sync here so published_services() (used across the public
+ * site) never has to change. Falling out of 'published' also clears the two
+ * visibility flags — a paused service can't stay listed or bookable.
+ */
+function set_service_workflow_status(int $serviceId, string $status, ?string $reviewedBy = null, ?string $reviewNote = null): void
+{
+    $valid = ['draft', 'pending_review', 'published', 'paused'];
+    if (!in_array($status, $valid, true)) {
+        return;
+    }
+    $isPublished = $status === 'published' ? 1 : 0;
+    $pdo = db();
+    $stmt = $pdo->prepare("UPDATE services SET
+        workflow_status = :status, is_published = :is_published,
+        review_note = :review_note, reviewed_by = :reviewed_by,
+        reviewed_at = CASE WHEN :status2 = 'published' THEN datetime('now') ELSE reviewed_at END,
+        updated_at = datetime('now')
+        WHERE id = :id");
+    $stmt->execute([
+        ':status' => $status, ':status2' => $status, ':is_published' => $isPublished,
+        ':review_note' => $reviewNote, ':reviewed_by' => $reviewedBy, ':id' => $serviceId,
+    ]);
+    if ($status !== 'published') {
+        $pdo->prepare('UPDATE services SET show_on_website = 0, bookable_online = 0 WHERE id = ?')->execute([$serviceId]);
+    }
+}
+
+/**
+ * Working-hours rows for a service: an override (service_id = X) fully
+ * replaces the general schedule (service_id IS NULL) for any weekday it
+ * covers — no deeper per-day merge. Kept deliberately simple; see the plan's
+ * note on clinic_hours for the reasoning.
+ */
+function clinic_effective_hours(int $serviceId): array
+{
+    $pdo = db();
+    $override = $pdo->prepare('SELECT * FROM clinic_hours WHERE service_id = ? AND is_active = 1 ORDER BY weekday, start_time');
+    $override->execute([$serviceId]);
+    $rows = $override->fetchAll();
+    if (!empty($rows)) {
+        return $rows;
+    }
+    return $pdo->query('SELECT * FROM clinic_hours WHERE service_id IS NULL AND is_active = 1 ORDER BY weekday, start_time')->fetchAll();
+}
+
+/**
+ * Computes real open slots for a service between two dates (inclusive),
+ * respecting working hours, closures, the service's own duration/buffers,
+ * already-booked appointments (any non-cancelled status), a minimum notice
+ * window, and the booking horizon. This is a DISPLAY helper only — the
+ * actual double-booking guard is create_appointment_atomically(), which
+ * re-checks at the moment of insert regardless of what this returned.
+ * Returns ['YYYY-MM-DD' => [['start' => 'HH:MM', 'starts_at' => ISO, 'ends_at' => ISO], ...]]
+ */
+function compute_available_slots(int $serviceId, string $dateFrom, string $dateTo): array
+{
+    $pdo = db();
+    $svcStmt = $pdo->prepare('SELECT * FROM services WHERE id = ? AND workflow_status = \'published\' AND bookable_online = 1');
+    $svcStmt->execute([$serviceId]);
+    $service = $svcStmt->fetch();
+    if (!$service || empty($service['duration_minutes']) || (int)$service['duration_minutes'] <= 0) {
+        return [];
+    }
+    $duration = (int)$service['duration_minutes'];
+    $bufferBefore = (int)$service['buffer_before_minutes'];
+    $bufferAfter = (int)$service['buffer_after_minutes'];
+
+    $hours = clinic_effective_hours($serviceId);
+    if (empty($hours)) {
+        return [];
+    }
+    $hoursByWeekday = [];
+    foreach ($hours as $h) {
+        $hoursByWeekday[(int)$h['weekday']][] = $h;
+    }
+
+    $closures = $pdo->query('SELECT date_from, date_to FROM clinic_closures')->fetchAll();
+
+    // Existing appointments in range, joined to their own service's buffers so
+    // a neighboring appointment's buffer is respected too, not just this one's.
+    $existingStmt = $pdo->prepare("SELECT ap.starts_at, ap.ends_at,
+            COALESCE(s.buffer_before_minutes, 0) AS buf_before, COALESCE(s.buffer_after_minutes, 0) AS buf_after
+        FROM appointments ap LEFT JOIN services s ON s.id = ap.service_id
+        WHERE ap.provider_id = 1 AND ap.status != 'cancelled'
+        AND ap.starts_at < :to AND ap.ends_at > :from");
+    $existingStmt->execute([':from' => $dateFrom . ' 00:00:00', ':to' => $dateTo . ' 23:59:59']);
+    $busy = [];
+    foreach ($existingStmt->fetchAll() as $row) {
+        $busy[] = [
+            strtotime($row['starts_at']) - ((int)$row['buf_before'] * 60),
+            strtotime($row['ends_at']) + ((int)$row['buf_after'] * 60),
+        ];
+    }
+
+    $minNoticeSeconds = (int)get_setting('min_notice_hours', '24') * 3600;
+    $earliestAllowed = time() + $minNoticeSeconds;
+
+    $result = [];
+    $cursor = strtotime($dateFrom);
+    $end = strtotime($dateTo);
+    while ($cursor <= $end) {
+        $dateStr = date('Y-m-d', $cursor);
+        $weekday = (int)date('w', $cursor);
+
+        $closed = false;
+        foreach ($closures as $c) {
+            if ($dateStr >= $c['date_from'] && $dateStr <= $c['date_to']) { $closed = true; break; }
+        }
+        if ($closed || empty($hoursByWeekday[$weekday])) {
+            $cursor += 86400;
+            continue;
+        }
+
+        $daySlots = [];
+        foreach ($hoursByWeekday[$weekday] as $h) {
+            $slotStart = strtotime($dateStr . ' ' . $h['start_time']);
+            $windowEnd = strtotime($dateStr . ' ' . $h['end_time']);
+            while ($slotStart + ($duration * 60) <= $windowEnd) {
+                $slotEnd = $slotStart + ($duration * 60);
+                $reservedFrom = $slotStart - ($bufferBefore * 60);
+                $reservedTo = $slotEnd + ($bufferAfter * 60);
+
+                $overlaps = false;
+                foreach ($busy as [$bFrom, $bTo]) {
+                    if ($reservedFrom < $bTo && $reservedTo > $bFrom) { $overlaps = true; break; }
+                }
+                if (!$overlaps && $slotStart >= $earliestAllowed) {
+                    $daySlots[] = [
+                        'start' => date('H:i', $slotStart),
+                        'starts_at' => date('Y-m-d H:i:s', $slotStart),
+                        'ends_at' => date('Y-m-d H:i:s', $slotEnd),
+                    ];
+                }
+                $slotStart += $duration * 60;
+            }
+        }
+        if (!empty($daySlots)) {
+            $result[$dateStr] = $daySlots;
+        }
+        $cursor += 86400;
+    }
+    return $result;
+}
+
+/**
+ * Inserts a new appointment inside an IMMEDIATE transaction so two requests
+ * arriving at the same instant for the same slot can't both succeed — the
+ * second one's overlap check will see the first's row (or, if truly
+ * simultaneous, SQLite's own write lock serializes them; busy_timeout in
+ * db() gives the loser up to 5s before giving up). This is the ONLY path
+ * that may insert into appointments — both the public booking flow and the
+ * admin calendar call this, never a raw INSERT.
+ */
+function create_appointment_atomically(array $data): array
+{
+    $pdo = db();
+    try {
+        $pdo->exec('BEGIN IMMEDIATE');
+
+        $overlap = $pdo->prepare("SELECT COUNT(*) FROM appointments
+            WHERE provider_id = :provider AND status != 'cancelled'
+            AND starts_at < :ends_at AND ends_at > :starts_at");
+        $overlap->execute([
+            ':provider' => $data['provider_id'] ?? 1,
+            ':starts_at' => $data['starts_at'],
+            ':ends_at' => $data['ends_at'],
+        ]);
+        if ((int)$overlap->fetchColumn() > 0) {
+            $pdo->exec('ROLLBACK');
+            return ['success' => false, 'error' => 'للأسف هالفترة صارت محجوزة قبل ما توصل. اختر فترة تانية من فضلك.'];
+        }
+
+        $ins = $pdo->prepare('INSERT INTO appointments
+            (provider_id, service_id, patient_id, request_id, starts_at, ends_at, location_mode, status, meeting_link, operational_notes, created_by, updated_by)
+            VALUES (:provider_id, :service_id, :patient_id, :request_id, :starts_at, :ends_at, :location_mode, :status, :meeting_link, :operational_notes, :created_by, :created_by)');
+        $ins->execute([
+            ':provider_id' => $data['provider_id'] ?? 1,
+            ':service_id' => $data['service_id'] ?? null,
+            ':patient_id' => $data['patient_id'] ?? null,
+            ':request_id' => $data['request_id'] ?? null,
+            ':starts_at' => $data['starts_at'],
+            ':ends_at' => $data['ends_at'],
+            ':location_mode' => $data['location_mode'] ?? null,
+            ':status' => $data['status'] ?? 'pending_confirmation',
+            ':meeting_link' => $data['meeting_link'] ?? null,
+            ':operational_notes' => $data['operational_notes'] ?? null,
+            ':created_by' => $data['created_by'] ?? null,
+        ]);
+        $newId = (int)$pdo->lastInsertId();
+
+        $log = $pdo->prepare("INSERT INTO appointment_change_log (appointment_id, action, new_values, changed_by) VALUES (?, 'created', ?, ?)");
+        $log->execute([$newId, json_encode(['starts_at' => $data['starts_at'], 'ends_at' => $data['ends_at'], 'status' => $data['status'] ?? 'pending_confirmation']), $data['created_by'] ?? null]);
+
+        $pdo->exec('COMMIT');
+        return ['success' => true, 'appointment_id' => $newId];
+    } catch (Throwable $e) {
+        try { $pdo->exec('ROLLBACK'); } catch (Throwable $e2) { /* transaction may already be closed */ }
+        return ['success' => false, 'error' => 'صار خطأ تقني وقت حجز الموعد. جرّب مرة تانية.'];
+    }
+}
+
+/** Same double-booking guard as create_appointment_atomically(), but for moving an existing appointment (excludes itself from the overlap check). */
+function reschedule_appointment_atomically(int $appointmentId, string $newStartsAt, string $newEndsAt, string $changedBy): array
+{
+    $pdo = db();
+    try {
+        $pdo->exec('BEGIN IMMEDIATE');
+
+        $cur = $pdo->prepare('SELECT * FROM appointments WHERE id = ?');
+        $cur->execute([$appointmentId]);
+        $existing = $cur->fetch();
+        if (!$existing) {
+            $pdo->exec('ROLLBACK');
+            return ['success' => false, 'error' => 'الموعد غير موجود.'];
+        }
+
+        $overlap = $pdo->prepare("SELECT COUNT(*) FROM appointments
+            WHERE provider_id = :provider AND status != 'cancelled' AND id != :self_id
+            AND starts_at < :ends_at AND ends_at > :starts_at");
+        $overlap->execute([
+            ':provider' => $existing['provider_id'], ':self_id' => $appointmentId,
+            ':starts_at' => $newStartsAt, ':ends_at' => $newEndsAt,
+        ]);
+        if ((int)$overlap->fetchColumn() > 0) {
+            $pdo->exec('ROLLBACK');
+            return ['success' => false, 'error' => 'الفترة الجديدة متعارضة مع موعد آخر. اختر فترة تانية.'];
+        }
+
+        $upd = $pdo->prepare("UPDATE appointments SET starts_at = ?, ends_at = ?, updated_by = ?, updated_at = datetime('now') WHERE id = ?");
+        $upd->execute([$newStartsAt, $newEndsAt, $changedBy, $appointmentId]);
+        $log = $pdo->prepare("INSERT INTO appointment_change_log (appointment_id, action, old_values, new_values, changed_by) VALUES (?, 'rescheduled', ?, ?, ?)");
+        $log->execute([$appointmentId, json_encode(['starts_at' => $existing['starts_at'], 'ends_at' => $existing['ends_at']]), json_encode(['starts_at' => $newStartsAt, 'ends_at' => $newEndsAt]), $changedBy]);
+
+        $pdo->exec('COMMIT');
+        return ['success' => true];
+    } catch (Throwable $e) {
+        try { $pdo->exec('ROLLBACK'); } catch (Throwable $e2) { /* transaction may already be closed */ }
+        return ['success' => false, 'error' => 'صار خطأ تقني وقت إعادة الجدولة. جرّب مرة تانية.'];
+    }
+}
+
+/** Cancels an appointment, freeing its slot, with a logged reason. */
+function cancel_appointment(int $appointmentId, string $reason, string $changedBy): void
+{
+    $pdo = db();
+    $upd = $pdo->prepare("UPDATE appointments SET status='cancelled', cancel_reason=?, updated_by=?, updated_at=datetime('now') WHERE id=?");
+    $upd->execute([$reason, $changedBy, $appointmentId]);
+    $log = $pdo->prepare("INSERT INTO appointment_change_log (appointment_id, action, new_values, changed_by) VALUES (?, 'cancelled', ?, ?)");
+    $log->execute([$appointmentId, json_encode(['reason' => $reason]), $changedBy]);
+}
+
+// --- Patients -------------------------------------------------------------
+
+/**
+ * The only way a patient record is created — always an explicit staff
+ * action (from a confirmed request, or a manual "new patient" form), never
+ * automatic. file_number is derived from the row's own id after insert, so
+ * there's no separate counter that could race or drift.
+ */
+function create_patient(array $data, string $createdBy): int
+{
+    $pdo = db();
+    $ins = $pdo->prepare("INSERT INTO patients (file_number, full_name, contact_method, contact_value, contact_preference, created_by)
+        VALUES ('', :full_name, :contact_method, :contact_value, :contact_preference, :created_by)");
+    $ins->execute([
+        ':full_name' => $data['full_name'],
+        ':contact_method' => $data['contact_method'],
+        ':contact_value' => $data['contact_value'],
+        ':contact_preference' => $data['contact_preference'] ?? null,
+        ':created_by' => $createdBy,
+    ]);
+    $newId = (int)$pdo->lastInsertId();
+    $fileNumber = 'PT-' . str_pad((string)$newId, 6, '0', STR_PAD_LEFT);
+    $pdo->prepare('UPDATE patients SET file_number = ? WHERE id = ?')->execute([$fileNumber, $newId]);
+    return $newId;
+}
+
+/** Converts a booking request into a patient record without copying anything beyond name/contact. */
+function create_patient_from_request(int $requestId, string $createdBy): ?int
+{
+    $stmt = db()->prepare('SELECT * FROM appointment_requests WHERE id = ?');
+    $stmt->execute([$requestId]);
+    $req = $stmt->fetch();
+    if (!$req) {
+        return null;
+    }
+    return create_patient([
+        'full_name' => $req['name'],
+        'contact_method' => $req['contact_method'],
+        'contact_value' => $req['contact_value'],
+    ], $createdBy);
+}
+
+// --- Clinical notes module (built, but gated) -----------------------------
+
+/** True only once the required prerequisite fields are filled in — see admin/clinical-settings.php. */
+function clinical_module_ready(): bool
+{
+    return get_setting('clinical_notes_hosting_note') !== ''
+        && get_setting('clinical_notes_retention_days') !== ''
+        && get_setting('clinical_notes_backup_plan') !== ''
+        && get_setting('clinical_notes_consent_note') !== '';
+}
+
+function clinical_module_enabled(): bool
+{
+    return setting_bool('clinical_notes_enabled') && clinical_module_ready();
+}
+
+function create_clinical_note_revision(int $noteId, string $content, ?int $editorId, string $editorName): void
+{
+    $ins = db()->prepare('INSERT INTO clinical_note_revisions (note_id, content, editor_id, editor_name) VALUES (?,?,?,?)');
+    $ins->execute([$noteId, $content, $editorId, $editorName]);
+}
+
+// --- Billing ---------------------------------------------------------------
+
+function generate_receipt_number(int $invoiceId): string
+{
+    return 'INV-' . date('Y') . '-' . str_pad((string)$invoiceId, 5, '0', STR_PAD_LEFT);
+}
+
+function invoice_paid_total(int $invoiceId): float
+{
+    $stmt = db()->prepare('SELECT COALESCE(SUM(amount), 0) FROM invoice_payments WHERE invoice_id = ?');
+    $stmt->execute([$invoiceId]);
+    return (float)$stmt->fetchColumn();
+}
+
+/** Recomputes and stores an invoice's status from its recorded payments vs its amount. */
+function refresh_invoice_status(int $invoiceId): void
+{
+    $stmt = db()->prepare('SELECT amount, status FROM invoices WHERE id = ?');
+    $stmt->execute([$invoiceId]);
+    $inv = $stmt->fetch();
+    if (!$inv || $inv['status'] === 'not_required') {
+        return;
+    }
+    $paid = invoice_paid_total($invoiceId);
+    $amount = (float)$inv['amount'];
+    if ($paid <= 0) {
+        $status = 'due';
+    } elseif ($paid < $amount) {
+        $status = 'partially_paid';
+    } else {
+        $status = 'paid';
+    }
+    db()->prepare("UPDATE invoices SET status = ?, updated_at = datetime('now') WHERE id = ?")->execute([$status, $invoiceId]);
+}
+
+// --- Access auditing --------------------------------------------------------
+
+/** Logs that a sensitive record was accessed/changed — action + actor + timestamp ONLY, never field content. */
+function log_access(string $action, string $entityType, ?int $entityId, array $actor): void
+{
+    $ins = db()->prepare('INSERT INTO access_audit_log (actor_id, actor_name, action, entity_type, entity_id) VALUES (?,?,?,?,?)');
+    $ins->execute([$actor['id'] ?? null, $actor['name'] ?? null, $action, $entityType, $entityId]);
 }
