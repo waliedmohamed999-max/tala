@@ -41,7 +41,7 @@ if (empty($noIndex)) {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/css/style.css">
+<link rel="stylesheet" href="/assets/css/style.css?v=<?= filemtime(__DIR__ . '/../assets/css/style.css') ?>">
 <?php if ($locale === 'en'): ?><link rel="stylesheet" href="/assets/css/ltr.css"><?php endif; ?>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22%237C9885%22/><text x=%2250%22 y=%2268%22 font-size=%2258%22 fill=%22white%22 text-anchor=%22middle%22 font-family=%22sans-serif%22>ت</text></svg>">
 </head>
@@ -52,7 +52,7 @@ if (empty($noIndex)) {
   <div class="container nav">
     <a href="/index.php" class="logo">تالا <span>| <?= $locale === 'en' ? 'Psychotherapy' : 'معالجة نفسية' ?></span></a>
 
-    <button class="nav-toggle" aria-expanded="false" aria-controls="primary-nav" aria-label="<?= $locale === 'en' ? 'Open navigation menu' : 'فتح قائمة التنقل' ?>">☰</button>
+
 
     <nav aria-label="<?= $locale === 'en' ? 'Main navigation' : 'التنقل الرئيسي' ?>">
       <ul class="nav-links" id="primary-nav">
@@ -78,6 +78,7 @@ if (empty($noIndex)) {
       <a href="<?= e(locale_url($locale === 'ar' ? 'en' : 'ar')) ?>" class="lang-switch-desktop" title="<?= $locale === 'ar' ? 'Switch to English' : 'التبديل للعربية' ?>"><?= $locale === 'ar' ? 'EN' : 'AR' ?></a>
       <a href="/book.php" class="btn btn-primary"><span class="hide-mobile">📅</span> <?= t('nav_book') ?></a>
     </div>
+    <button class="nav-toggle" aria-expanded="false" aria-controls="primary-nav" aria-label="<?= $locale === 'en' ? 'Open navigation menu' : 'فتح قائمة التنقل' ?>">☰</button>
   </div>
 </header>
 

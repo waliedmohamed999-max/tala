@@ -44,13 +44,10 @@ $credentials = get_setting('credentials');
       <p class="hero-note">هالموقع مو مخصص للطوارئ. بحال في خطر مباشر عليك أو على حدا تاني، تواصل فورًا مع خدمات الطوارئ المحلية أو أقرب قسم إسعاف.</p>
     <?php endif; ?>
   </div>
-  <div class="hero-art" aria-hidden="true">
-    <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="100" cy="100" r="92" fill="#E3EBE4"/>
-      <circle cx="72" cy="88" r="34" fill="#7C9885" opacity="0.5"/>
-      <circle cx="128" cy="118" r="46" fill="#5B6B7A" opacity="0.35"/>
-      <path d="M55 140 Q100 170 145 140" stroke="#5E7A68" stroke-width="4" fill="none" stroke-linecap="round"/>
-    </svg>
+  <div class="hero-art hero-portrait">
+    <img src="<?= e($photo ?: '/public_uploads/tala-photo.png') ?>"
+         alt="<?= $locale === 'en' ? 'Photo of Tala' : '???? ????' ?>"
+         width="1254" height="1254" fetchpriority="high">
   </div>
 </section>
 
