@@ -45,8 +45,8 @@ $credentials = get_setting('credentials');
     <?php endif; ?>
   </div>
   <div class="hero-art hero-portrait">
-    <img src="<?= e($photo ?: '/public_uploads/tala-photo.png') ?>"
-         alt="<?= $locale === 'en' ? 'Photo of Tala' : '???? ????' ?>"
+    <img src="/assets/images/therapy-room.png"
+         alt="<?= $locale === 'en' ? 'Illustration of a calm, sunlit counseling room' : 'صورة تعبيرية لغرفة جلسات هادئة بإضاءة طبيعية' ?>"
          width="1254" height="1254" fetchpriority="high">
   </div>
 </section>
