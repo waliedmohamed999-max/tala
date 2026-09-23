@@ -89,8 +89,6 @@ $pageTitle = 'مصادر وملفات';
 require __DIR__ . '/includes/layout_top.php';
 ?>
 
-<div class="admin-page-head"><h1>مصادر وملفات</h1></div>
-
 <div class="notice-banner" style="margin-bottom:24px;">
   <strong>تذكير</strong>
   لا تنسخ أي دليل أو ملف أو صورة محمية بحقوق نشر — بس روابط لمصادر موثوقة، أو ملفات أصلية راجعتها تالا. راجع الروابط دوريًا للتأكد إنها لسا شغالة.

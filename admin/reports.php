@@ -15,8 +15,6 @@ $pageTitle = 'التقارير';
 require __DIR__ . '/includes/layout_top.php';
 ?>
 
-<div class="admin-page-head"><h1>التقارير</h1></div>
-
 <div class="admin-card" style="margin-bottom:20px;">
   <form method="get" style="display:flex; gap:12px; align-items:end; flex-wrap:wrap;">
     <div class="form-group" style="margin:0;"><label>من تاريخ</label><input type="date" name="from" value="<?= e($from) ?>"></div>

@@ -4,10 +4,9 @@ $adminUser = require_clinical_access();
 $activeNav = 'patients';
 
 if (!clinical_module_enabled()) {
-    $pageTitle = 'الوحدة غير مفعّلة';
+    $pageTitle = 'الملاحظات السريرية غير مفعّلة';
     require __DIR__ . '/includes/layout_top.php';
     ?>
-    <div class="admin-page-head"><h1>الملاحظات السريرية غير مفعّلة</h1></div>
     <div class="notice-banner">
       وحدة الملاحظات السريرية معطّلة حاليًا. <?= $adminUser['role'] === 'owner' ? 'فعّلها من <a href="/admin/clinical-settings.php">إعدادات الملاحظات السريرية</a> بعد تعبئة المتطلبات.' : 'تواصل مع مالك الموقع لتفعيلها.' ?>
     </div>
@@ -103,14 +102,10 @@ if ($id) {
     $attachments = $att->fetchAll();
 }
 
-$pageTitle = $id ? 'ملاحظة سريرية' : 'ملاحظة جديدة';
+$primaryAction = ['label' => 'رجوع لملف المريض', 'href' => '/admin/patient-view.php?id=' . (int)$patientId];
+$pageTitle = ($id ? 'ملاحظة سريرية' : 'ملاحظة جديدة') . ' — ' . $patient['full_name'];
 require __DIR__ . '/includes/layout_top.php';
 ?>
-
-<div class="admin-page-head">
-  <h1><?= $id ? 'ملاحظة سريرية' : 'ملاحظة جديدة' ?> — <?= e($patient['full_name']) ?></h1>
-  <a href="/admin/patient-view.php?id=<?= (int)$patientId ?>" class="btn btn-outline">رجوع لملف المريض</a>
-</div>
 
 <div class="notice-inline" style="margin-bottom:20px;">🔒 هالصفحة مقتصرة على تالا/المراجع المهني ومالك الموقع فقط. كل اطلاع أو تعديل مُسجَّل بسجل التدقيق.</div>
 

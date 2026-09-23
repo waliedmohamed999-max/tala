@@ -19,8 +19,6 @@ $pageTitle = 'قوالب الردود';
 require __DIR__ . '/includes/layout_top.php';
 ?>
 
-<div class="admin-page-head"><h1>قوالب الردود</h1></div>
-
 <div class="notice-inline" style="margin-bottom:24px;">
   هاي نصوص جاهزة تُنسخ يدويًا من صفحة تفاصيل كل طلب موعد. ما في إرسال آلي لأي رسالة — لازم إعداد بريد SMTP فعلي أولًا، وموافقة تالا على النصوص. استخدم <code>[الاسم]</code>، <code>[اليوم]</code>، و<code>[الوقت]</code> كنقاط تُستبدل يدويًا أو تلقائيًا (الاسم فقط بيتعوض تلقائيًا).
 </div>

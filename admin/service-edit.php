@@ -96,8 +96,6 @@ $pageTitle = $id ? 'تعديل خدمة' : 'خدمة جديدة';
 require __DIR__ . '/includes/layout_top.php';
 ?>
 
-<div class="admin-page-head"><h1><?= $id ? 'تعديل خدمة' : 'خدمة جديدة' ?></h1></div>
-
 <?php foreach ($errors as $err): ?><div class="alert alert-error"><?= e($err) ?></div><?php endforeach; ?>
 
 <?php if ($id && $service['workflow_status'] !== 'draft'): ?>

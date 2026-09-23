@@ -38,11 +38,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_verify()) {
 }
 
 $categories = db()->query('SELECT c.*, (SELECT COUNT(*) FROM articles a WHERE a.category_id = c.id) AS article_count FROM categories c ORDER BY sort_order, name')->fetchAll();
-$pageTitle = 'التصنيفات';
+$pageTitle = 'تصنيفات المقالات';
 require __DIR__ . '/includes/layout_top.php';
 ?>
-
-<div class="admin-page-head"><h1>تصنيفات المقالات</h1></div>
 
 <div class="admin-card" style="margin-bottom:24px;">
   <h3>إضافة تصنيف جديد</h3>

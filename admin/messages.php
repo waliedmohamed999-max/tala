@@ -25,8 +25,6 @@ $pageTitle = 'رسائل التواصل';
 require __DIR__ . '/includes/layout_top.php';
 ?>
 
-<div class="admin-page-head"><h1>رسائل التواصل</h1></div>
-
 <div class="admin-card">
   <?php if (empty($messages)): ?>
     <p>ما في رسائل لسا.</p>

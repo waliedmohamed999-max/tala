@@ -63,8 +63,6 @@ $pageTitle = 'إعدادات الإشعارات والبريد';
 require __DIR__ . '/includes/layout_top.php';
 ?>
 
-<div class="admin-page-head"><h1>إعدادات الإشعارات والبريد</h1></div>
-
 <div class="notice-banner" style="margin-bottom:24px;">
   <strong>الحالة: <?= mailer_is_configured() ? '🟢 البريد مربوط ومفعّل' : '🔴 البريد غير مربوط' ?></strong>
   <?php if (!mailer_is_configured()): ?>

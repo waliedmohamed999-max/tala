@@ -7,7 +7,6 @@ if (!setting_bool('billing_enabled')) {
     $pageTitle = 'الفواتير والمدفوعات';
     require __DIR__ . '/includes/layout_top.php';
     ?>
-    <div class="admin-page-head"><h1>الفواتير والمدفوعات</h1></div>
     <div class="notice-banner">قسم الفوترة معطّل حاليًا. فعّله من <a href="/admin/settings.php">الإعدادات العامة</a> إذا كنت بحاجة له.</div>
     <?php require __DIR__ . '/includes/layout_bottom.php';
     exit;
@@ -33,14 +32,10 @@ $stmt = db()->prepare($sql);
 $stmt->execute($params);
 $invoices = $stmt->fetchAll();
 
+$primaryAction = ['label' => 'فاتورة جديدة', 'href' => '/admin/invoice-edit.php'];
 $pageTitle = 'الفواتير والمدفوعات';
 require __DIR__ . '/includes/layout_top.php';
 ?>
-
-<div class="admin-page-head">
-  <h1>الفواتير والمدفوعات</h1>
-  <a href="/admin/invoice-edit.php" class="btn btn-primary">+ فاتورة جديدة</a>
-</div>
 
 <div class="admin-card">
   <form method="get" style="margin-bottom:20px;">

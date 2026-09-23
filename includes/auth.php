@@ -82,6 +82,19 @@ function require_clinic_ops_access(): array
 }
 
 /**
+ * Broader READ access to a patient's page than require_clinic_ops_access():
+ * a reviewer (the clinical role) needs to open a patient's page to reach
+ * their clinical notes, even though they have no administrative rights
+ * over the patient record itself. Individual admin actions (edit/archive/
+ * delete/create) stay gated behind require_clinic_ops_access() at the
+ * point of action, not here.
+ */
+function require_patient_view_access(): array
+{
+    return require_role('owner', 'bookings_manager', 'reviewer');
+}
+
+/**
  * Clinical file access (notes, attachments) — owner + reviewer only, since
  * "reviewer" is the professional-review role Tala herself holds. A distinct
  * function name (rather than reusing require_review_access() directly) so a

@@ -50,11 +50,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $values = [];
 foreach ($fields as $f) { $values[$f] = get_setting($f); }
 
-$pageTitle = 'الإعدادات العامة';
+$pageTitle = 'الملف الشخصي والإعدادات العامة';
 require __DIR__ . '/includes/layout_top.php';
 ?>
-
-<div class="admin-page-head"><h1>الملف الشخصي والإعدادات العامة</h1></div>
 
 <div class="notice-banner" style="margin-bottom:24px;">
   <strong>تذكير</strong>

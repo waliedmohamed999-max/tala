@@ -22,8 +22,6 @@ $pageTitle = 'طلبات دعوات التحدث';
 require __DIR__ . '/includes/layout_top.php';
 ?>
 
-<div class="admin-page-head"><h1>طلبات دعوات التحدث</h1></div>
-
 <div class="admin-card">
   <?php if (empty($inquiries)): ?>
     <p>ما في طلبات لسا.</p>

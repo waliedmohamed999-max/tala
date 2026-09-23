@@ -27,14 +27,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_verify()) {
 }
 
 $users = db()->query('SELECT * FROM admin_users ORDER BY created_at')->fetchAll();
+$primaryAction = ['label' => 'مستخدم جديد', 'href' => '/admin/user-edit.php'];
 $pageTitle = 'المستخدمون والصلاحيات';
 require __DIR__ . '/includes/layout_top.php';
 ?>
-
-<div class="admin-page-head">
-  <h1>المستخدمون والصلاحيات</h1>
-  <a href="/admin/user-edit.php" class="btn btn-primary">+ مستخدم جديد</a>
-</div>
 
 <div class="admin-card" style="margin-bottom:20px;">
   <h3>الأدوار المتاحة</h3>

@@ -105,15 +105,11 @@ $pageTitle = 'طلبات المواعيد';
 require __DIR__ . '/includes/layout_top.php';
 ?>
 
-<div class="admin-page-head">
-  <h1>طلبات المواعيد</h1>
-</div>
-
 <?php if ($detail): ?>
-  <div class="admin-card" style="margin-bottom:26px;">
+  <div class="admin-card" style="margin-bottom:var(--admin-sp-4);">
     <div class="admin-page-head">
       <h2 style="margin:0;">طلب <?= $detail['reference_code'] ? e($detail['reference_code']) : '#' . (int)$detail['id'] ?> — <?= e($detail['name']) ?></h2>
-      <a href="/admin/appointments.php" class="btn btn-outline">رجوع للقائمة</a>
+      <a href="/admin/appointments.php" class="btn btn-outline btn-sm">رجوع للقائمة</a>
     </div>
 
     <div class="grid grid-2" style="margin-bottom:20px;">
@@ -242,20 +238,21 @@ require __DIR__ . '/includes/layout_top.php';
   </div>
 <?php endif; ?>
 
-<div class="admin-card">
-  <form method="get" style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:20px;">
-    <input type="text" name="q" placeholder="بحث بالاسم أو وسيلة التواصل" value="<?= e($q) ?>" style="max-width:260px;">
-    <select name="status">
-      <option value="">كل الحالات</option>
-      <?php foreach ($statusLabels as $val => $label): ?>
-        <option value="<?= e($val) ?>" <?= $statusFilter === $val ? 'selected' : '' ?>><?= e($label) ?></option>
-      <?php endforeach; ?>
-    </select>
-    <button type="submit" class="btn btn-outline">تصفية</button>
-  </form>
+<form method="get" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:var(--admin-sp-3); align-items:center;">
+  <input type="text" name="q" placeholder="بحث بالاسم، وسيلة التواصل، أو الرقم المرجعي" value="<?= e($q) ?>" style="max-width:260px;">
+  <button type="submit" class="btn btn-outline btn-sm">بحث</button>
+</form>
 
+<div style="display:flex; gap:6px; margin-bottom:var(--admin-sp-4); flex-wrap:wrap;">
+  <a href="/admin/appointments.php<?= $q ? '?q=' . urlencode($q) : '' ?>" class="btn <?= $statusFilter === '' ? 'btn-primary' : 'btn-outline' ?> btn-sm">كل الحالات</a>
+  <?php foreach ($statusLabels as $val => $label): ?>
+    <a href="/admin/appointments.php?status=<?= $val ?><?= $q ? '&q=' . urlencode($q) : '' ?>" class="btn <?= $statusFilter === $val ? 'btn-primary' : 'btn-outline' ?> btn-sm"><?= e($label) ?></a>
+  <?php endforeach; ?>
+</div>
+
+<div class="admin-card" style="padding:0; overflow:hidden;">
   <?php if (empty($list)): ?>
-    <p>ما في طلبات مطابقة.</p>
+    <div class="empty-state"><p>ما في طلبات مطابقة.</p></div>
   <?php else: ?>
     <table class="data-table">
       <thead><tr><th>الرقم المرجعي</th><th>الاسم</th><th>وسيلة التواصل</th><th>الخدمة</th><th>الحالة</th><th>التاريخ</th></tr></thead>
@@ -263,11 +260,11 @@ require __DIR__ . '/includes/layout_top.php';
         <?php foreach ($list as $b): ?>
           <tr>
             <td><a href="/admin/appointments.php?id=<?= (int)$b['id'] ?>"><?= e($b['reference_code'] ?: '#' . $b['id']) ?></a></td>
-            <td><a href="/admin/appointments.php?id=<?= (int)$b['id'] ?>"><?= e($b['name']) ?></a></td>
-            <td><?= e($b['contact_method']) ?>: <?= e($b['contact_value']) ?></td>
-            <td><?= e($b['service_name'] ?? '—') ?></td>
+            <td><a href="/admin/appointments.php?id=<?= (int)$b['id'] ?>" style="font-weight:700;"><?= e($b['name']) ?></a></td>
+            <td class="field-hint"><?= e($b['contact_method']) ?>: <?= e($b['contact_value']) ?></td>
+            <td class="field-hint"><?= e($b['service_name'] ?? '—') ?></td>
             <td><span class="status-badge status-<?= e($b['status']) ?>"><?= e($statusLabels[$b['status']] ?? $b['status']) ?></span></td>
-            <td><?= e(date('Y/m/d H:i', strtotime($b['created_at']))) ?></td>
+            <td class="field-hint"><?= e(date('Y/m/d H:i', strtotime($b['created_at']))) ?></td>
           </tr>
         <?php endforeach; ?>
       </tbody>

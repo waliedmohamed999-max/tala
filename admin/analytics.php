@@ -13,11 +13,9 @@ $topPages = db()->query("SELECT path, COUNT(*) AS views FROM analytics_events
     WHERE event_type='page_view' AND day >= date('now','-30 days') AND path IS NOT NULL
     GROUP BY path ORDER BY views DESC LIMIT 15")->fetchAll();
 
-$pageTitle = 'إحصاءات الزيارات';
+$pageTitle = 'إحصاءات الزيارات (آخر ٣٠ يوم)';
 require __DIR__ . '/includes/layout_top.php';
 ?>
-
-<div class="admin-page-head"><h1>إحصاءات الزيارات (آخر ٣٠ يوم)</h1></div>
 
 <div class="notice-inline" style="margin-bottom:24px;">
   عدادات مجهولة تمامًا — بدون أي معرّف زائر أو IP أو نص كتبه أي حدا بالنماذج. فيك توقف التسجيل بالكامل من <a href="/admin/settings.php">الإعدادات العامة</a>.

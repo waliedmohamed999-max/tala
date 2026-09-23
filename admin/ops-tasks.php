@@ -29,8 +29,6 @@ $pageTitle = 'مهام تشغيلية';
 require __DIR__ . '/includes/layout_top.php';
 ?>
 
-<div class="admin-page-head"><h1>مهام تشغيلية</h1></div>
-
 <div class="admin-card" style="margin-bottom:20px;">
   <form method="post" style="display:flex; gap:10px; flex-wrap:wrap; align-items:end;">
     <?= csrf_field() ?><input type="hidden" name="action" value="add">

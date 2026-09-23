@@ -37,8 +37,6 @@ $pageTitle = 'الأسئلة الشائعة';
 require __DIR__ . '/includes/layout_top.php';
 ?>
 
-<div class="admin-page-head"><h1>الأسئلة الشائعة</h1></div>
-
 <div class="admin-card" style="margin-bottom:24px;">
   <h3>إضافة سؤال جديد</h3>
   <form method="post" class="form-narrow">

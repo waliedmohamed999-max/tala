@@ -20,11 +20,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_verify()) {
     redirect('/admin/clinical-settings.php');
 }
 
-$pageTitle = 'إعدادات الملاحظات السريرية';
+$pageTitle = 'الملاحظات السريرية — الإعداد والتفعيل';
 require __DIR__ . '/includes/layout_top.php';
 ?>
-
-<div class="admin-page-head"><h1>الملاحظات السريرية — الإعداد والتفعيل</h1></div>
 
 <div class="notice-banner" style="margin-bottom:24px;">
   <strong>⚠️ قرار مهم قبل التفعيل</strong>

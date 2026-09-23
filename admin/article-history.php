@@ -61,15 +61,11 @@ if ($compareId) {
     }
 }
 
+$primaryAction = ['label' => 'رجوع للتحرير', 'href' => '/admin/article-edit.php?id=' . $articleId];
 $pageTitle = 'سجل النسخ: ' . $article['title'];
 require __DIR__ . '/includes/layout_top.php';
 ?>
 
-<div class="admin-page-head">
-  <h1>سجل النسخ</h1>
-  <a href="/admin/article-edit.php?id=<?= $articleId ?>" class="btn btn-outline">رجوع للتحرير</a>
-</div>
-<p class="field-hint" style="margin-bottom:20px;"><?= e($article['title']) ?></p>
 
 <?php if ($diff !== null): ?>
   <div class="admin-card" style="margin-bottom:24px;">

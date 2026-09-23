@@ -114,11 +114,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$pageTitle = $id ? 'تعديل موعد' : 'موعد جديد';
+$pageTitle = $id ? 'تعديل موعد' : 'موعد جديد / حظر فترة';
 require __DIR__ . '/includes/layout_top.php';
 ?>
-
-<div class="admin-page-head"><h1><?= $id ? 'تعديل موعد' : 'موعد جديد / حظر فترة' ?></h1></div>
 
 <?php foreach ($errors as $err): ?><div class="alert alert-error"><?= e($err) ?></div><?php endforeach; ?>
 

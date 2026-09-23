@@ -37,16 +37,12 @@ foreach ($appointments as $a) {
 $prevWeek = date('Y-m-d', $weekStartTs - (7 * 86400));
 $nextWeek = date('Y-m-d', $weekStartTs + (7 * 86400));
 
+$primaryAction = ['label' => 'موعد جديد / حظر فترة', 'href' => '/admin/appointment-edit.php?date=' . $anchor];
 $pageTitle = 'التقويم';
 require __DIR__ . '/includes/layout_top.php';
 ?>
 
-<div class="admin-page-head">
-  <h1>التقويم</h1>
-  <a href="/admin/appointment-edit.php?date=<?= e($anchor) ?>" class="btn btn-primary">+ موعد جديد / حظر فترة</a>
-</div>
-
-<div class="admin-card" style="margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+<div class="admin-card" style="margin-bottom:var(--admin-sp-4); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; padding:var(--admin-sp-3) var(--admin-sp-4);">
   <a href="/admin/calendar.php?date=<?= $prevWeek ?>" class="btn btn-outline btn-sm">← الأسبوع السابق</a>
   <strong><?= e($weekStart) ?> — <?= e($weekEnd) ?></strong>
   <a href="/admin/calendar.php?date=<?= $nextWeek ?>" class="btn btn-outline btn-sm">الأسبوع التالي →</a>

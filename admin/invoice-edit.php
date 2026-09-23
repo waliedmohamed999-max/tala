@@ -67,11 +67,9 @@ if ($id) {
 }
 $paidTotal = $id ? invoice_paid_total($id) : 0;
 
-$pageTitle = $id ? 'تعديل فاتورة' : 'فاتورة جديدة';
+$pageTitle = $id ? ('فاتورة ' . ($invoice['receipt_number'] ?? '')) : 'فاتورة جديدة';
 require __DIR__ . '/includes/layout_top.php';
 ?>
-
-<div class="admin-page-head"><h1><?= $id ? 'فاتورة ' . e($invoice['receipt_number'] ?? '') : 'فاتورة جديدة' ?></h1></div>
 
 <div class="admin-card" style="margin-bottom:20px;">
   <form method="post" class="form-narrow">

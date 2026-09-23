@@ -77,14 +77,10 @@ $stmt = db()->prepare($sql);
 $stmt->execute($params);
 $articles = $stmt->fetchAll();
 
+$primaryAction = ['label' => 'محتوى جديد', 'href' => '/admin/article-edit.php'];
 $pageTitle = 'المقالات والأدلة';
 require __DIR__ . '/includes/layout_top.php';
 ?>
-
-<div class="admin-page-head">
-  <h1>المقالات والأدلة</h1>
-  <a href="/admin/article-edit.php" class="btn btn-primary">+ محتوى جديد</a>
-</div>
 
 <div class="notice-inline" style="margin-bottom:20px;">
   سير العمل: <strong>مسودة</strong> ← <strong>بانتظار المراجعة</strong> ← <strong>معتمدة</strong> ← <strong>منشورة</strong>. بس المحتوى المنشور يظهر للزوار، وتعديل مقال منشور بيرجعه للمراجعة بدون ما يغيّر النسخة الظاهرة للزوار.

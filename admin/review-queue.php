@@ -46,8 +46,6 @@ $pageTitle = 'قائمة الاعتماد';
 require __DIR__ . '/includes/layout_top.php';
 ?>
 
-<div class="admin-page-head"><h1>قائمة الاعتماد</h1></div>
-
 <div class="notice-inline" style="margin-bottom:24px;">
   هون كل المحتوى يلي بانتظار قرارك: اعتماد، طلب تعديل، أو إرجاعه مسودة. ما في شي بينشر أو يُعتمد تلقائيًا — كل قرار لازم يكون بضغطة منك.
 </div>

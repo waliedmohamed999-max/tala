@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/auth.php';
-$adminUser = require_clinic_ops_access();
+$adminUser = require_patient_view_access();
+$canManagePatients = in_array($adminUser['role'], ['owner', 'bookings_manager'], true);
 $activeNav = 'patients';
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
@@ -9,6 +10,13 @@ $stmt->execute([$id]);
 $patient = $stmt->fetch();
 if (!$patient) { flash_set('error', 'ملف المريض غير موجود.'); redirect('/admin/patients.php'); }
 log_access('view', 'patient', $id, $adminUser);
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_verify() && !$canManagePatients) {
+    // Administrative actions (archive/unarchive/delete) require bookings_manager or owner —
+    // a reviewer only has read access to reach clinical notes, never these controls.
+    flash_set('error', 'ما عندك صلاحية تنفّذ هالإجراء.');
+    redirect('/admin/patient-view.php?id=' . $id);
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_verify()) {
     $action = $_POST['action'] ?? '';
@@ -79,7 +87,7 @@ require __DIR__ . '/includes/layout_top.php';
 
 <div class="admin-page-head">
   <h1><?= e($patient['full_name']) ?> <span class="field-hint">(<?= e($patient['file_number']) ?>)</span></h1>
-  <a href="/admin/patient-edit.php?id=<?= (int)$patient['id'] ?>" class="btn btn-outline">تعديل البيانات الإدارية</a>
+  <?php if ($canManagePatients): ?><a href="/admin/patient-edit.php?id=<?= (int)$patient['id'] ?>" class="btn btn-outline">تعديل البيانات الإدارية</a><?php endif; ?>
 </div>
 
 <div class="admin-card" style="margin-bottom:20px;">
@@ -93,6 +101,7 @@ require __DIR__ . '/includes/layout_top.php';
     <div class="notice-inline" style="margin-top:14px;">مؤرشف بتاريخ <?= e(date('Y/m/d', strtotime($patient['archived_at']))) ?> — السبب: <?= e($patient['archived_reason']) ?></div>
   <?php endif; ?>
 
+  <?php if ($canManagePatients): ?>
   <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;">
     <a href="/admin/appointment-edit.php?date=<?= date('Y-m-d') ?>" class="btn btn-outline btn-sm">+ موعد جديد لهالمريض</a>
     <?php if ($patient['status'] === 'active'): ?>
@@ -118,6 +127,7 @@ require __DIR__ . '/includes/layout_top.php';
       </details>
     <?php endif; ?>
   </div>
+  <?php endif; ?>
 </div>
 
 <div class="admin-card" style="margin-bottom:20px;">

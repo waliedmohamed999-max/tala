@@ -18,14 +18,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_verify()) {
 
 $events = db()->query('SELECT * FROM events ORDER BY event_date DESC')->fetchAll();
 $eventsSectionEnabled = setting_bool('events_section_enabled');
+$primaryAction = ['label' => 'فعالية جديدة', 'href' => '/admin/event-edit.php'];
 $pageTitle = 'محاضرات وفعاليات';
 require __DIR__ . '/includes/layout_top.php';
 ?>
-
-<div class="admin-page-head">
-  <h1>محاضرات وفعاليات</h1>
-  <a href="/admin/event-edit.php" class="btn btn-primary">+ فعالية جديدة</a>
-</div>
 
 <div class="notice-banner" style="margin-bottom:24px;">
   <strong>القسم <?= $eventsSectionEnabled ? 'مفعّل حاليًا بالموقع العام' : 'مخفي حاليًا عن الموقع العام' ?></strong>

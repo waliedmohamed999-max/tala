@@ -120,8 +120,6 @@ $pageTitle = $id ? 'تعديل فعالية' : 'فعالية جديدة';
 require __DIR__ . '/includes/layout_top.php';
 ?>
 
-<div class="admin-page-head"><h1><?= $id ? 'تعديل فعالية' : 'فعالية جديدة' ?></h1></div>
-
 <?php foreach ($errors as $err): ?><div class="alert alert-error"><?= e($err) ?></div><?php endforeach; ?>
 
 <div class="admin-card" style="margin-bottom:24px;">

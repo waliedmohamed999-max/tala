@@ -62,11 +62,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_verify()) {
 $hours = db()->query('SELECT h.*, s.name AS service_name FROM clinic_hours h LEFT JOIN services s ON s.id = h.service_id ORDER BY h.weekday, h.start_time')->fetchAll();
 $closures = db()->query("SELECT * FROM clinic_closures WHERE date_to >= date('now') ORDER BY date_from")->fetchAll();
 
-$pageTitle = 'ساعات العمل';
+$pageTitle = 'ساعات العمل والإغلاقات';
 require __DIR__ . '/includes/layout_top.php';
 ?>
-
-<div class="admin-page-head"><h1>ساعات العمل والإغلاقات</h1></div>
 
 <div class="notice-inline" style="margin-bottom:24px;">
   الفترات "العامة" (بدون خدمة محددة) تطبّق على كل خدمة ما إلها فترات خاصة فيها. لو ضفت فترة لخدمة معينة، رح تحل محل الفترات العامة لتلك الخدمة بالكامل بذلك اليوم. المنطقة الزمنية: <?= e(get_setting('clinic_timezone_display', 'Asia/Damascus')) ?>.

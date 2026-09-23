@@ -138,14 +138,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+$primaryAction = $id ? ['label' => 'سجل النسخ', 'href' => '/admin/article-history.php?id=' . $id] : null;
 $pageTitle = $id ? 'تعديل محتوى' : 'محتوى جديد';
 require __DIR__ . '/includes/layout_top.php';
 ?>
-
-<div class="admin-page-head">
-  <h1><?= $id ? 'تعديل محتوى' : 'محتوى جديد' ?></h1>
-  <?php if ($id): ?><a href="/admin/article-history.php?id=<?= $id ?>" class="btn btn-outline">🕓 سجل النسخ</a><?php endif; ?>
-</div>
 
 <?php foreach ($errors as $err): if ($err === 'CONFLICT') continue; ?><div class="alert alert-error"><?= e($err) ?></div><?php endforeach; ?>
 

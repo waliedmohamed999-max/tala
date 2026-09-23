@@ -28,14 +28,12 @@ $activeCount = count(array_filter($subscribers, fn($s) => $s['status'] === 'subs
 $pendingCount = count(array_filter($subscribers, fn($s) => $s['status'] === 'pending'));
 $statusLabels = ['subscribed' => 'نشط', 'pending' => 'بانتظار التأكيد', 'unsubscribed' => 'ملغى'];
 $statusBadges = ['subscribed' => 'status-confirmed', 'pending' => 'status-contacting', 'unsubscribed' => 'status-cancelled'];
+$primaryAction = ['label' => 'تصدير CSV', 'href' => '/admin/subscribers.php?export=csv'];
 $pageTitle = 'النشرة البريدية';
 require __DIR__ . '/includes/layout_top.php';
 ?>
 
-<div class="admin-page-head">
-  <h1>النشرة البريدية</h1>
-  <a href="/admin/subscribers.php?export=csv" class="btn btn-outline">تصدير CSV (المشتركين النشطين فقط)</a>
-</div>
+<p class="field-hint" style="margin-bottom:var(--admin-sp-4);">تصدير CSV يشمل المشتركين النشطين فقط.</p>
 
 <div class="notice-inline" style="margin-bottom:20px;">
   الاشتراك بيحتاج تأكيد بالبريد (opt-in مزدوج) — إذا ما كان البريد مربوط وقت الاشتراك، بينضاف كـ«نشط» مباشرة كحل احتياطي، وبينعرض هون بوضوح.

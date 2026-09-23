@@ -436,6 +436,7 @@ function migrate_clinic_ops(PDO $pdo): void
     // --- Session hardening: force_logout_at lets an owner invalidate a
     // user's active sessions from admin/user-edit.php without full 2FA.
     ensure_column($pdo, 'admin_users', 'force_logout_at', 'TEXT');
+    ensure_column($pdo, 'admin_users', 'sidebar_collapsed', 'INTEGER NOT NULL DEFAULT 0');
     ensure_column($pdo, 'admin_users', 'role', "TEXT NOT NULL DEFAULT 'editor'"); // no-op if already present; documents the 'financial' addition
 
     // --- Appointment requests: extend the status machine + link fields.
