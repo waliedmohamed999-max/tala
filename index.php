@@ -19,6 +19,13 @@ $photo = get_setting('photo_path');
 $specialties = get_setting('specialties');
 $yearsExp = get_setting('years_experience');
 $credentials = get_setting('credentials');
+$fullName = get_setting('full_professional_name');
+$fullNameEn = get_setting('full_professional_name_en');
+$professionalTitle = get_setting('professional_title');
+$city = get_setting('city');
+$cityEn = get_setting('city_en');
+$yearsExpEn = get_setting('years_experience_en');
+$specialtiesEn = get_setting('specialties_en');
 ?>
 
 <!-- Hero -->
@@ -68,23 +75,33 @@ $credentials = get_setting('credentials');
       <?php if ($locale === 'en'): ?>
         <span class="eyebrow">Meet Tala</span>
         <h2>A psychotherapist who walks with you, without judgment</h2>
-        <?php if ($bioShort || $credentials || $specialties): ?>
+        <?php if ($fullNameEn): ?>
+          <p class="field-hint" style="margin-bottom:10px;">
+            <strong><?= e($fullNameEn) ?></strong><?= $professionalTitle ? ' — ' . e($professionalTitle) : '' ?><?= $cityEn ? ' · ' . e($cityEn) : '' ?><?= $yearsExpEn ? ' · ' . e($yearsExpEn) . ' experience' : '' ?>
+          </p>
+        <?php endif; ?>
+        <?php if ($specialtiesEn): ?><p><strong>Areas of work:</strong> <?= e($specialtiesEn) ?></p><?php endif; ?>
+        <?php if ($bioShort || $credentials): ?>
           <?php content_translation_notice('/about.php'); ?>
         <?php else: ?>
-          <p>We're still preparing Tala's full introduction — her qualifications, experience, and areas of work will be added here once confirmed.</p>
+          <p>We're still preparing Tala's full introduction — her qualifications and experience will be added here once confirmed.</p>
         <?php endif; ?>
         <a href="/about.php?lang=en" class="btn btn-outline">Read more about Tala</a>
       <?php else: ?>
         <span class="eyebrow">تعرّف على تالا</span>
         <h2>معالجة نفسية بترافقك بلا أحكام</h2>
+        <?php if ($fullName): ?>
+          <p class="field-hint" style="margin-bottom:10px;">
+            <strong><?= e($fullName) ?></strong><?= $professionalTitle ? ' — ' . e($professionalTitle) : '' ?><?= $city ? ' · ' . e($city) : '' ?><?= $yearsExp ? ' · خبرة ' . e($yearsExp) : '' ?>
+          </p>
+        <?php endif; ?>
         <?php if ($bioShort): ?>
           <p><?= e($bioShort) ?></p>
         <?php else: ?>
-          <p>لسا عم نجهّز التعريف الكامل عن تالا — مؤهلاتها وخبرتها ومجالات عملها رح تُضاف هون فور ما تأكدها.</p>
+          <p>لسا عم نجهّز التعريف الكامل عن تالا — مؤهلاتها وطريقة عملها رح تُضاف هون فور ما تأكدها.</p>
         <?php endif; ?>
         <?php if ($credentials): ?><p><strong>المؤهلات:</strong> <?= e($credentials) ?></p><?php endif; ?>
-        <?php if ($yearsExp): ?><p><strong>سنوات الخبرة:</strong> <?= e($yearsExp) ?></p><?php endif; ?>
-        <?php if ($specialties): ?><p><strong>الاختصاصات:</strong> <?= e($specialties) ?></p><?php endif; ?>
+        <?php if ($specialties): ?><p><strong>المجالات:</strong> <?= e($specialties) ?></p><?php endif; ?>
         <a href="/about.php" class="btn btn-outline">اقرأ المزيد عن تالا</a>
       <?php endif; ?>
     </div>

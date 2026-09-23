@@ -33,4 +33,37 @@ document.addEventListener('DOMContentLoaded', function () {
       if (field) field.value = startedAt;
     });
   });
+
+  // --- Floating WhatsApp button -----------------------------------------
+  var waWrap = document.getElementById('whatsappFabWrap');
+  var waBubble = document.getElementById('whatsappFabBubble');
+  var waClose = document.getElementById('whatsappFabClose');
+  if (waWrap) {
+    // Remember the teaser bubble was dismissed, per browser — never sent anywhere.
+    try {
+      if (waBubble && localStorage.getItem('tala_whatsapp_bubble_dismissed') === '1') {
+        waBubble.style.display = 'none';
+      }
+    } catch (e) {}
+    if (waClose && waBubble) {
+      waClose.addEventListener('click', function () {
+        waBubble.style.display = 'none';
+        try { localStorage.setItem('tala_whatsapp_bubble_dismissed', '1'); } catch (e) {}
+      });
+    }
+
+    // Never let the button visually sit over a submit button or the privacy
+    // consent checkbox — hide it while either is in view instead.
+    var sensitiveEls = document.querySelectorAll('.consent-box, form button[type="submit"]');
+    if (sensitiveEls.length && 'IntersectionObserver' in window) {
+      var visibleCount = 0;
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          visibleCount += entry.isIntersecting ? 1 : -1;
+        });
+        waWrap.classList.toggle('is-hidden', visibleCount > 0);
+      }, { threshold: 0.15 });
+      sensitiveEls.forEach(function (el) { observer.observe(el); });
+    }
+  }
 });

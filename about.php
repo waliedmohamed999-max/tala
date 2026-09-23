@@ -23,12 +23,19 @@ $offersRemote = setting_bool('offers_remote_sessions');
 $languages = get_setting('languages');
 $introVideo = get_setting('intro_video_url');
 $mediaMentions = array_filter(array_map('trim', explode("\n", get_setting('media_mentions'))));
+$fullName = get_setting('full_professional_name');
+$professionalTitle = get_setting('professional_title');
 ?>
 
 <section class="page-hero container">
   <span class="eyebrow">عن تالا</span>
   <h1>معالجة نفسية بترافقك بهدوء واحترام</h1>
   <p>بلا وعود كبيرة، بس بمساحة حقيقية للحديث والفهم.</p>
+  <?php if ($fullName): ?>
+    <p class="field-hint">
+      <strong><?= e($fullName) ?></strong><?= $professionalTitle ? ' — ' . e($professionalTitle) : '' ?><?= $city ? ' · ' . e($city) : '' ?><?= $yearsExp ? ' · خبرة ' . e($yearsExp) : '' ?>
+    </p>
+  <?php endif; ?>
 </section>
 
 <section class="section">
@@ -60,8 +67,17 @@ $mediaMentions = array_filter(array_map('trim', explode("\n", get_setting('media
       <?php endif; ?>
       <?php if ($license): ?><p><strong>الترخيص:</strong> <?= e($license) ?></p><?php endif; ?>
       <?php if ($yearsExp): ?><p><strong>سنوات الخبرة:</strong> <?= e($yearsExp) ?></p><?php endif; ?>
-      <?php if ($specialties): ?><p><strong>الاختصاصات:</strong> <?= e($specialties) ?></p><?php endif; ?>
       <?php if ($languages): ?><p><strong>اللغات:</strong> <?= e($languages) ?></p><?php endif; ?>
+
+      <?php if ($specialties): ?>
+        <h3 style="margin-top:34px;">المجالات التي أعمل فيها</h3>
+        <p class="field-hint" style="margin-bottom:12px;">هاي مجالات عامة بتشتغل فيها تالا — مو أسماء خدمات جاهزة للحجز. تفاصيل كل خدمة فعلية (الفئة العمرية، شكل الجلسة، المدة) بتلاقيها بصفحة <a href="/services.php">الخدمات</a> بعد ما تُعتمد.</p>
+        <div style="display:flex; flex-wrap:wrap; gap:8px;">
+          <?php foreach (array_filter(array_map('trim', explode('،', $specialties))) as $area): ?>
+            <span class="eyebrow" style="margin:0;"><?= e($area) ?></span>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
 
       <?php if ($introVideo): ?>
         <h3 style="margin-top:34px;">فيديو تعريفي</h3>

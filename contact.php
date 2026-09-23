@@ -79,11 +79,15 @@ require __DIR__ . '/includes/header.php';
 
 $phone = get_setting('phone');
 $whatsapp = get_setting('whatsapp');
+$whatsappEnabled = setting_bool('whatsapp_enabled');
 $email = get_setting('email');
 $hours = get_setting('working_hours');
 $address = get_setting('address');
 $showAddress = setting_bool('show_address');
 $mapUrl = get_setting('map_embed_url');
+$city = get_setting('city');
+$cityEn = get_setting('city_en');
+$offersRemote = setting_bool('offers_remote_sessions');
 ?>
 
 <section class="page-hero container">
@@ -154,12 +158,18 @@ $mapUrl = get_setting('map_embed_url');
       <div class="card" style="margin-bottom:20px;">
         <h3><?= $msg('بيانات التواصل', 'Contact details') ?></h3>
         <ul style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:10px;">
-          <?php if ($phone): ?><li>📞 <a href="tel:<?= e($phone) ?>"><?= e($phone) ?></a></li><?php endif; ?>
-          <?php if ($whatsapp): ?><li>💬 <a href="https://wa.me/<?= e(preg_replace('/[^0-9]/', '', $whatsapp)) ?>" target="_blank" rel="noopener">WhatsApp: <?= e($whatsapp) ?></a></li><?php endif; ?>
+          <?php if ($phone): ?>
+            <li>
+              📞 <a href="tel:<?= e(phone_intl_href($phone)) ?>"><?= e($phone) ?></a>
+              <button type="button" class="action-links" style="background:none; border:none; cursor:pointer; color:var(--color-sage-dark); font-size:.82rem;" onclick="navigator.clipboard.writeText('<?= e(phone_intl_href($phone)) ?>')"><?= $msg('نسخ الرقم', 'Copy number') ?></button>
+            </li>
+          <?php endif; ?>
+          <?php if ($whatsapp && $whatsappEnabled): ?><li>💬 <a href="https://wa.me/<?= e(whatsapp_digits($whatsapp)) ?>" target="_blank" rel="noopener">WhatsApp: <?= e($whatsapp) ?></a></li><?php endif; ?>
           <?php if ($email): ?><li>✉️ <a href="mailto:<?= e($email) ?>"><?= e($email) ?></a></li><?php endif; ?>
           <?php if ($hours && $locale === 'ar'): ?><li>🕒 <?= e($hours) ?></li><?php endif; ?>
+          <?php if ($city): ?><li>📍 <?= $msg('جلسات حضورية في', 'In-person sessions in') ?> <?= e($locale === 'en' ? ($cityEn ?: $city) : $city) ?><?= $offersRemote ? $msg('، وكمان عن بُعد', ', and also remote') : '' ?></li><?php endif; ?>
           <?php if ($showAddress && $address && $locale === 'ar'): ?><li>📍 <?= e($address) ?></li><?php endif; ?>
-          <?php if (!$phone && !$whatsapp && !$email): ?>
+          <?php if (!$phone && !($whatsapp && $whatsappEnabled) && !$email): ?>
             <li class="field-hint"><?= $msg('بيانات التواصل المباشرة بانتظار اعتمادها من تالا. استخدم النموذج جنب هون بهالأثناء.', 'Direct contact details are pending confirmation. Please use the form for now.') ?></li>
           <?php endif; ?>
         </ul>

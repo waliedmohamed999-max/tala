@@ -617,6 +617,14 @@ function migrate_clinic_ops(PDO $pdo): void
         'clinical_notes_backup_plan' => '',
         'clinical_notes_consent_note' => '',
         'privacy_policy_reviewed' => '0',
+        'full_professional_name_en' => '',
+        'city_en' => '',
+        'years_experience_en' => '',
+        'specialties_en' => '',
+        'whatsapp_enabled' => '0',
+        'whatsapp_number_confirmed' => '0',
+        'whatsapp_cta_text' => '',
+        'whatsapp_message' => '',
     ];
     $check = $pdo->prepare('SELECT COUNT(*) FROM settings WHERE `key` = ?');
     $insert = $pdo->prepare('INSERT INTO settings (`key`, value) VALUES (?, ?)');
@@ -633,27 +641,39 @@ function seed(PDO $pdo): void
     $settings = [
         'site_name' => 'تالا | معالجة نفسية',
         'display_title' => 'تالا | معالجة نفسية',
-        'full_professional_name' => '',
-        'professional_title' => 'معالجة نفسية',
+        // Confirmed 2026-09-23 directly by Tala — real professional facts, not placeholders.
+        'full_professional_name' => 'تالا دعميش',
+        'full_professional_name_en' => 'Tala Dameesh',
+        // Kept in English exactly as Tala provided it — do NOT translate to "أخصائية نفسية"
+        // or any Arabic title, and never substitute "دكتورة"/"طبيبة نفسية", until Tala
+        // explicitly confirms an Arabic professional title herself.
+        'professional_title' => 'Psychologist',
         'credentials' => '',
         'license_info' => '',
-        'years_experience' => '',
-        'specialties' => '',
+        'years_experience' => '3 سنوات',
+        'years_experience_en' => '3 years',
+        'specialties' => 'القلق، التوتر، العلاقات الزوجية، الدعم النفسي، الأطفال، المراهقون',
+        'specialties_en' => 'Anxiety, Stress, Marital Relationships, Psychological Support, Children, Adolescents',
         'languages' => '',                    // اللغات التي تُقدَّم فيها الجلسات — بانتظار التأكيد
         'bio_short' => '',
         'bio_long' => '',
         'photo_path' => '/public_uploads/tala-photo.png',
         'intro_video_url' => '',              // فيديو تعريفي — يُضاف فقط إذا وافقت تالا
         'media_mentions' => '',               // ظهور إعلامي حقيقي، سطر لكل عنصر — بانتظار التأكيد
-        'city' => 'حمص',
+        'city' => 'حمص، سوريا',
+        'city_en' => 'Homs, Syria',
         'address' => '',
         'show_address' => '0',
         'map_embed_url' => '',
-        'phone' => '',
-        'whatsapp' => '',
+        'phone' => '0982716702',
+        'whatsapp' => '+963 982 716 702',
+        'whatsapp_enabled' => '0',            // زر واتساب العائم — يبقى معطّلًا حتى تؤكد تالا إنه الرقم فعّال على واتساب
+        'whatsapp_number_confirmed' => '0',   // مؤشر إداري منفصل: هل تأكد إنه هالرقم مرتبط فعليًا بحساب واتساب
+        'whatsapp_cta_text' => 'عندك استفسار؟ احكي معنا',
+        'whatsapp_message' => 'مرحبًا، عندي استفسار عن طريقة حجز جلسة.',
         'email' => '',
         'working_hours' => '',
-        'offers_remote_sessions' => '0',
+        'offers_remote_sessions' => '1',
         'cancellation_policy' => '',
         'privacy_last_updated' => date('Y-m-d'),
         'booking_notice' => 'وصلنا طلبك. رح نتواصل معك لنأكد التفاصيل. إرسال الطلب لحاله ما بيعني إن الموعد تأكّد.',

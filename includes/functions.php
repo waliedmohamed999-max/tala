@@ -437,6 +437,29 @@ function record_analytics_event(string $eventType, ?string $path = null): void
     }
 }
 
+/** Converts a local Syrian number ('0982716702') to an international tel:/wa.me-ready form ('+963982716702'). */
+function phone_intl_href(string $phone): string
+{
+    $digits = preg_replace('/[^0-9]/', '', $phone);
+    if ($digits === '') {
+        return '';
+    }
+    if (str_starts_with($digits, '963')) {
+        // already international
+    } elseif (str_starts_with($digits, '0')) {
+        $digits = '963' . substr($digits, 1);
+    } else {
+        $digits = '963' . $digits;
+    }
+    return '+' . $digits;
+}
+
+/** Same as phone_intl_href() but without the leading '+', for wa.me links. */
+function whatsapp_digits(string $number): string
+{
+    return ltrim(phone_intl_href($number), '+');
+}
+
 function published_categories(): array
 {
     return db()->query('SELECT * FROM categories ORDER BY sort_order, name')->fetchAll();

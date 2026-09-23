@@ -12,6 +12,20 @@ $hasBookableOnline = (int)db()->query("SELECT COUNT(*) FROM services WHERE workf
 $clinicalReady = clinical_module_ready();
 $clinicalEnabled = setting_bool('clinical_notes_enabled');
 
+// Only what's genuinely still missing after the 2026-09-23 professional-data
+// update — name/city/phone/specialties/years are already confirmed and live.
+$profileGaps = [
+    ['label' => 'ترجمة عربية معتمدة للمسمى المهني (حاليًا "Psychologist" بالإنجليزي فقط) + اللقب اللي تحبه تالا', 'done' => false],
+    ['label' => 'المؤهل الأكاديمي ورقم الترخيص المهني (إن رغبت تالا بنشرهما)', 'done' => (bool)get_setting('credentials')],
+    ['label' => 'عنوان استقبال الجلسات الحضورية، وهل يُعرض كامل أو يُرسل بعد تأكيد الموعد', 'done' => (bool)get_setting('address')],
+    ['label' => 'ساعات العمل الفعلية والمناطق الجغرافية المقبولة للجلسات أونلاين', 'done' => (bool)get_setting('working_hours')],
+    ['label' => 'أسماء الخدمات الرسمية، الفئات العمرية، وتفاصيل كل خدمة', 'done' => $hasPublishedService],
+    ['label' => 'مدد الجلسات وأسعارها (إن رغبت تالا بعرضها)', 'done' => $hasBookableOnline],
+    ['label' => 'بريد إلكتروني لاستقبال إشعارات الحجز', 'done' => (bool)get_setting('email')],
+    ['label' => 'تأكيد إنه رقم واتساب مفعّل فعليًا ومناسب للنشر العام', 'done' => setting_bool('whatsapp_number_confirmed')],
+    ['label' => 'صورة مهنية معتمدة من تالا', 'done' => get_setting('photo_path') !== ''],
+];
+
 $items = [
     ['label' => 'في خدمة واحدة على الأقل منشورة (معتمدة من تالا)', 'ok' => $hasPublishedService, 'link' => '/admin/services.php'],
     ['label' => 'في ساعات عمل مضبوطة بالتقويم', 'ok' => $hasHours, 'link' => '/admin/clinic-hours.php'],
@@ -26,6 +40,22 @@ require __DIR__ . '/includes/layout_top.php';
 
 <div class="notice-inline" style="margin-bottom:24px;">
   هاي الشاشة بتوضح شو ناقص قبل تفعيل أي ميزة عامة على الموقع. اكتمال الواجهات لحاله مو معناه جاهزية — الجاهزية الحقيقية تعني نجاح كل هالبنود + مراجعة تالا للإجراءات المهنية والبيانات المنشورة.
+</div>
+
+<div class="admin-card" style="margin-bottom:20px;">
+  <h2 style="margin-top:0;">استكمال الملف المهني</h2>
+  <p class="field-hint" style="margin-bottom:14px;">الاسم، المدينة، رقم الهاتف، سنوات الخبرة، والمجالات العامة اتأكدت من تالا وصارت منشورة. الباقي هون هو بس اللي لسا ناقص فعليًا.</p>
+  <table class="data-table">
+    <tbody>
+      <?php foreach ($profileGaps as $g): ?>
+        <tr>
+          <td style="width:36px;"><?= $g['done'] ? '✅' : '⭕' ?></td>
+          <td><?= e($g['label']) ?></td>
+        </tr>
+      <?php endforeach; ?>
+    </tbody>
+  </table>
+  <p style="margin-top:14px;"><a href="/admin/settings.php">فتح الإعدادات لتعبئة هالبنود</a></p>
 </div>
 
 <div class="admin-card" style="margin-bottom:20px;">

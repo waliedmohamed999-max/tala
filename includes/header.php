@@ -11,7 +11,7 @@ require_once __DIR__ . '/i18n.php';
 $siteName = get_setting('display_title', 'تالا | معالجة نفسية');
 $pageTitle = $pageTitle ?? $siteName;
 $fullTitle = $pageTitle === $siteName ? $siteName : $pageTitle . ' — ' . $siteName;
-$pageDescription = $pageDescription ?? 'مساحة آمنة للحديث والدعم النفسي مع تالا في حمص، سوريا. تعرّف على الخدمات، اقرأ محتوى إرشاديًا، واطلب موعدك بخصوصية.';
+$pageDescription = $pageDescription ?? 'تالا دعميش، Psychologist في حمص، سوريا — مساحة آمنة للحديث والدعم النفسي، حضوريًا وأونلاين. تعرّف على الخدمات، اقرأ محتوى إرشاديًا، واطلب موعدك بخصوصية.';
 $canonicalPath = $canonicalPath ?? $_SERVER['REQUEST_URI'];
 $currentFile = basename($_SERVER['SCRIPT_NAME']);
 $locale = current_locale();
