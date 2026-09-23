@@ -157,9 +157,7 @@ p { margin: 0 0 1em; color: var(--color-text-muted); }
   color: var(--color-sage-dark);
   letter-spacing: .3px;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
+  flex-shrink: 0;
 }
 .logo span { color: var(--color-slate); font-weight: 500; font-size: .8em; }
 
