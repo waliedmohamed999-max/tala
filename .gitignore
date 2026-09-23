@@ -3,3 +3,4 @@
 /includes/config.local.php
 /public_uploads/*
 !/public_uploads/.htaccess
+!/public_uploads/tala-photo.png

@@ -354,7 +354,7 @@ function seed(PDO $pdo): void
         'languages' => '',                    // اللغات التي تُقدَّم فيها الجلسات — بانتظار التأكيد
         'bio_short' => '',
         'bio_long' => '',
-        'photo_path' => '',
+        'photo_path' => '/public_uploads/tala-photo.png',
         'intro_video_url' => '',              // فيديو تعريفي — يُضاف فقط إذا وافقت تالا
         'media_mentions' => '',               // ظهور إعلامي حقيقي، سطر لكل عنصر — بانتظار التأكيد
         'city' => 'حمص',
