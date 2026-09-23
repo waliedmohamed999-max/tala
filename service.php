@@ -26,6 +26,10 @@ $pageDescription = $service['summary'] ?: ('تفاصيل خدمة ' . $service['
 require __DIR__ . '/includes/header.php';
 ?>
 
+<div class="article-hero-banner no-print" style="background: linear-gradient(135deg, var(--color-sage-light), var(--color-slate-light));">
+  <?php render_topic_art((((int)$service['id']) % 6) + 1, '90px'); ?>
+</div>
+
 <section class="section container" style="max-width:800px;">
   <div class="breadcrumbs"><a href="/services.php">الخدمات</a> / <?= e($service['name']) ?></div>
   <h1><?= e($service['name']) ?></h1>

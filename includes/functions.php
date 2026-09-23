@@ -375,6 +375,48 @@ function category_icon(?string $slug): string
     return $icons[$slug] ?? '📝';
 }
 
+/** Pairs each category with one of render_topic_art()'s 6 variants, so card thumbnails feel consistent per topic instead of random. */
+function category_art_variant(?string $slug): int
+{
+    $variants = [
+        'قلق-وتوتر' => 2,
+        'مشاعر-ومزاج' => 1,
+        'نوم-وروتين' => 5,
+        'علاقات-وتواصل' => 3,
+        'حدود-شخصية' => 6,
+        'ضغوط-الحياة' => 4,
+        'البدء-بالعلاج-النفسي' => 1,
+        'العناية-بالنفس' => 4,
+    ];
+    return $variants[$slug] ?? 1;
+}
+
+/**
+ * A small rounded "card thumbnail" showing the same calm abstract art as
+ * render_topic_art(), used everywhere a card would otherwise have no
+ * visual at all (article cards, service cards, event cards without a
+ * real photo yet). Never a stock/stereotypical photo — see the brand
+ * guidance against sad-therapy imagery and against claiming a photo is
+ * Tala's own until she provides and approves one.
+ */
+function render_card_thumb(int $variant = 1): void
+{
+    $variants = [
+        1 => ['#7C9885', '#5B6B7A'],
+        2 => ['#5B6B7A', '#7C9885'],
+        3 => ['#9DB6A4', '#7C9885'],
+        4 => ['#7C9885', '#8FA0AC'],
+        5 => ['#8FA0AC', '#7C9885'],
+        6 => ['#5E7A68', '#9CAAB4'],
+    ];
+    [$c1, $c2] = $variants[$variant] ?? $variants[1];
+    ?>
+    <div class="card-thumb" style="background: linear-gradient(135deg, <?= e($c1) ?>22, <?= e($c2) ?>22);">
+        <?php render_topic_art($variant, '56px'); ?>
+    </div>
+    <?php
+}
+
 /**
  * Privacy-respecting analytics: records only an event type, the path, and
  * the day — never a visitor identifier, IP, or any free text a visitor

@@ -147,7 +147,7 @@ p { margin: 0 0 1em; color: var(--color-text-muted); }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 0;
+  padding: 14px 20px;
   gap: 10px;
   position: relative;
 }
@@ -234,9 +234,9 @@ p { margin: 0 0 1em; color: var(--color-text-muted); }
 
 /* ---------- Hero ---------- */
 .hero {
-  padding: 70px 0 60px;
+  padding: 70px 20px 60px;
   display: grid;
-  grid-template-columns: 1.1fr .9fr;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr);
   gap: 40px;
   align-items: center;
 }
@@ -261,6 +261,28 @@ p { margin: 0 0 1em; color: var(--color-text-muted); }
   overflow: hidden;
 }
 .hero-art svg { width: 62%; height: 62%; }
+
+/* Shared split sections stack before their text becomes too narrow. */
+.split-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 40px;
+  align-items: start;
+}
+.split-layout--intro {
+  grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
+  align-items: center;
+}
+.split-layout--about {
+  grid-template-columns: minmax(0, .75fr) minmax(0, 1.25fr);
+  gap: 44px;
+}
+.split-layout > *, .hero > *, .grid > * { min-width: 0; }
+@media (max-width: 760px) {
+  .split-layout { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .split-layout--intro > :first-child,
+  .split-layout--about > :first-child { width: 100%; max-width: 360px; margin-inline: auto; }
+}
 
 /* ---------- Cards ---------- */
 .grid {
@@ -325,6 +347,22 @@ p { margin: 0 0 1em; color: var(--color-text-muted); }
 }
 
 /* Article / content cards */
+.article-hero-banner {
+  height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.card-thumb {
+  aspect-ratio: 16/9;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: -26px -26px 18px;
+  overflow: hidden;
+}
+.card-thumb svg { width: 56px; height: 56px; }
 .article-card { display: flex; flex-direction: column; height: 100%; }
 .article-card .cat-tag {
   font-size: .78rem;
@@ -505,7 +543,7 @@ textarea { resize: vertical; min-height: 110px; }
   align-items: center;
 }
 .newsletter-form input[type="email"] {
-  min-width: 220px;
+  min-width: 0;
   padding: 10px 14px;
   border-radius: 999px;
   border: none;
@@ -570,7 +608,7 @@ textarea { resize: vertical; min-height: 110px; }
 .breadcrumbs a { color: var(--color-slate); }
 
 .page-hero {
-  padding: 50px 0 30px;
+  padding: 50px 20px 30px;
   text-align: center;
 }
 .page-hero p { max-width: 640px; margin-inline: auto; }

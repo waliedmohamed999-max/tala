@@ -46,6 +46,10 @@ $sources = array_filter(array_map('trim', explode("\n", $article['sources'] ?? '
 [$contentHtml, $toc] = build_table_of_contents($article['content']);
 ?>
 
+<div class="article-hero-banner no-print" style="background: linear-gradient(135deg, var(--color-sage-light), var(--color-slate-light));">
+  <?php render_topic_art(category_art_variant($article['category_slug'] ?? null), '90px'); ?>
+</div>
+
 <section class="section">
   <div class="container article-body">
     <div class="breadcrumbs">

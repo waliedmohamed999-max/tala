@@ -101,6 +101,7 @@ function articles_query_keep(array $overrides = []): string
       <div class="grid grid-3">
         <?php foreach ($articles as $a): ?>
           <article class="card article-card">
+            <?php render_card_thumb(category_art_variant($a['category_slug'] ?? null)); ?>
             <div class="tag-row" style="margin-bottom:10px;">
               <?php if ($a['category_name']): ?><span class="cat-tag"><?= category_icon($a['category_slug']) ?> <?= e($a['category_name']) ?></span><?php endif; ?>
               <?php if ($a['content_type'] !== 'article'): ?><span class="cat-tag"><?= e($contentTypeLabels[$a['content_type']]) ?></span><?php endif; ?>

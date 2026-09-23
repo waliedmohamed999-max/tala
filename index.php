@@ -56,7 +56,7 @@ $credentials = get_setting('credentials');
 
 <!-- About teaser -->
 <section class="section section--alt">
-  <div class="container" style="display:grid; grid-template-columns: .8fr 1.2fr; gap:40px; align-items:center;">
+  <div class="container split-layout split-layout--intro">
     <div>
       <?php if ($photo): ?>
         <img src="<?= e($photo) ?>" alt="<?= $locale === 'en' ? 'Photo of Tala' : 'صورة تالا' ?>" style="border-radius: var(--radius-lg); box-shadow: var(--shadow-card);">
@@ -143,8 +143,9 @@ $credentials = get_setting('credentials');
       <?php content_translation_notice('/services.php'); ?>
     <?php else: ?>
       <div class="grid grid-3">
-        <?php foreach ($services as $s): ?>
+        <?php foreach ($services as $i => $s): ?>
           <div class="card">
+            <?php render_card_thumb(($i % 6) + 1); ?>
             <h3><?= e($s['name']) ?></h3>
             <?php if ($s['summary']): ?><p><?= e($s['summary']) ?></p><?php endif; ?>
             <a href="/service.php?slug=<?= urlencode($s['slug']) ?>" class="btn btn-outline">التفاصيل</a>
@@ -207,6 +208,7 @@ $credentials = get_setting('credentials');
       <div class="grid grid-3">
         <?php foreach ($articles as $a): ?>
           <article class="card article-card">
+            <?php render_card_thumb(category_art_variant($a['category_slug'] ?? null)); ?>
             <?php if ($a['category_name']): ?><span class="cat-tag"><?= category_icon($a['category_slug']) ?> <?= e($a['category_name']) ?></span><?php endif; ?>
             <h3><a href="/articles/article.php?slug=<?= urlencode($a['slug']) ?>"><?= e($a['title']) ?></a></h3>
             <p><?= e($a['excerpt']) ?></p>

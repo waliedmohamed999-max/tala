@@ -32,7 +32,7 @@ $mediaMentions = array_filter(array_map('trim', explode("\n", get_setting('media
 </section>
 
 <section class="section">
-  <div class="container" style="display:grid; grid-template-columns:.75fr 1.25fr; gap:44px; align-items:start;">
+  <div class="container split-layout split-layout--about">
     <div>
       <?php if ($photo): ?>
         <img src="<?= e($photo) ?>" alt="صورة تالا" style="border-radius:var(--radius-lg); box-shadow:var(--shadow-card);">

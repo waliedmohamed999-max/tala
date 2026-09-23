@@ -94,7 +94,7 @@ $mapUrl = get_setting('map_embed_url');
 </section>
 
 <section class="section">
-  <div class="container" style="display:grid; grid-template-columns:1fr 1fr; gap:40px; align-items:start;">
+  <div class="container split-layout">
     <div>
       <?php if ($sent): ?>
         <div class="alert alert-success" role="status"><?= $msg('وصلتنا رسالتك، رح نرد عليك قريبًا. شكرًا إلك.', "We've received your message and will reply soon. Thank you.") ?></div>

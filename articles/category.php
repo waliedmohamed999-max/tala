@@ -48,6 +48,7 @@ $contentTypeLabels = ['article' => 'مقالة', 'guide' => 'دليل خطوة �
       <div class="grid grid-3">
         <?php foreach ($articles as $a): ?>
           <article class="card article-card">
+            <?php render_card_thumb(category_art_variant($category['slug'])); ?>
             <?php if ($a['content_type'] !== 'article'): ?><span class="cat-tag"><?= e($contentTypeLabels[$a['content_type']]) ?></span><?php endif; ?>
             <h3><a href="/articles/article.php?slug=<?= urlencode($a['slug']) ?>"><?= e($a['title']) ?></a></h3>
             <p><?= e($a['excerpt']) ?></p>

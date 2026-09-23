@@ -32,8 +32,9 @@ $services = published_services();
       </div>
     <?php else: ?>
       <div class="grid grid-3">
-        <?php foreach ($services as $s): ?>
+        <?php foreach ($services as $i => $s): ?>
           <div class="card">
+            <?php render_card_thumb(($i % 6) + 1); ?>
             <h3><?= e($s['name']) ?></h3>
             <?php if ($s['summary']): ?><p><?= e($s['summary']) ?></p><?php endif; ?>
             <?php if ($s['duration']): ?><p><strong>المدة:</strong> <?= e($s['duration']) ?></p><?php endif; ?>
