@@ -1,0 +1,13 @@
+<?php
+/**
+ * Copy this file to config.local.php (same folder) to override defaults for
+ * a real deployment. config.local.php is git-ignored and blocked from web
+ * access by .htaccess — never commit real secrets to config.php itself.
+ */
+
+// Enable to actually send an email when a new booking/contact message
+// arrives (in addition to it always showing up in /admin). Requires either
+// a working local mail transport, or swapping the mail() calls in
+// includes/notify.php for PHPMailer + real SMTP credentials.
+// define('NOTIFY_EMAIL_ENABLED', true);
+// define('NOTIFY_EMAIL_TO', 'tala@example.com');

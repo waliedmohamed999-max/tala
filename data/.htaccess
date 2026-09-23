@@ -1,0 +1,6 @@
+# The SQLite database file lives in this folder. It must never be reachable
+# directly over HTTP (it contains password hashes and all booking/contact
+# data), so we deny all web access here regardless of filename.
+Require all denied
+Order deny,allow
+Deny from all

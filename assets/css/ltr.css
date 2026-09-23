@@ -1,0 +1,21 @@
+/* Loaded only when current_locale() === 'en'. Overrides the RTL-first base
+   in style.css. Most spacing/alignment already uses CSS logical properties
+   (margin-inline-start, padding-inline-start, etc.) which flip automatically
+   once direction is ltr — this file only needs to fix the few physical
+   left/right declarations and the base text direction. */
+
+body {
+  direction: ltr;
+  text-align: left;
+}
+
+.skip-link {
+  right: auto;
+  left: -999px;
+}
+.skip-link:focus {
+  left: 0;
+  right: auto;
+}
+
+.article-body, .article-body ul { text-align: left; }

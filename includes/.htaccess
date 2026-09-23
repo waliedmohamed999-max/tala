@@ -1,0 +1,5 @@
+# These are PHP includes meant to be required by other scripts, never
+# requested directly — deny direct web access as defense in depth.
+Require all denied
+Order deny,allow
+Deny from all

@@ -1,0 +1,8 @@
+# Uploaded files (profile photo, etc.) are served directly, but must never
+# be executable as PHP even if an attacker sneaks a disguised file past the
+# upload validation in admin/settings.php.
+<FilesMatch "\.(php|phtml|php\d)$">
+    Require all denied
+    Order deny,allow
+    Deny from all
+</FilesMatch>

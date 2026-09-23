@@ -1,0 +1,21 @@
+Options -Indexes
+DirectoryIndex index.php
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Never serve any stray config.local.php, .sqlite, or .sql file directly,
+# no matter which folder it ends up in.
+<FilesMatch "\.(sqlite|sql|log)$">
+    Require all denied
+    Order deny,allow
+    Deny from all
+</FilesMatch>
+<Files "config.local.php">
+    Require all denied
+    Order deny,allow
+    Deny from all
+</Files>
