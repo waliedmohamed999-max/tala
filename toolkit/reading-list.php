@@ -11,6 +11,7 @@ require __DIR__ . '/../includes/header.php';
 ?>
 
 <section class="page-hero container">
+  <div style="display:flex; justify-content:center; margin-bottom:6px;"><?php render_topic_art(3); ?></div>
   <span class="eyebrow"><?= $locale === 'en' ? 'Your Space' : 'مساحة إلك' ?></span>
   <h1><?= $pageTitle ?></h1>
   <p><?= $locale === 'en'

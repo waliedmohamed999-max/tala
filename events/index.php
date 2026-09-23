@@ -28,8 +28,16 @@ $upcoming = array_filter($events, fn($e) => $e['event_date'] && $e['event_date']
 $past = array_filter($events, fn($e) => !$e['event_date'] || $e['event_date'] < $today);
 
 function render_event_card(array $ev): void {
+    $cover = db()->prepare("SELECT file_path FROM event_media WHERE event_id = ? AND media_type = 'image' ORDER BY sort_order LIMIT 1");
+    $cover->execute([$ev['id']]);
+    $coverPath = $cover->fetchColumn();
     ?>
     <article class="card">
+      <?php if ($coverPath): ?>
+        <div class="card-thumb"><img src="<?= e($coverPath) ?>" alt="" style="width:100%; height:100%; object-fit:cover;" loading="lazy"></div>
+      <?php else: ?>
+        <?php render_card_thumb((((int)$ev['id']) % 6) + 1); ?>
+      <?php endif; ?>
       <h3><a href="/events/event.php?slug=<?= urlencode($ev['slug']) ?>"><?= e($ev['title']) ?></a></h3>
       <?php if ($ev['topic_summary']): ?><p><?= e($ev['topic_summary']) ?></p><?php endif; ?>
       <?php if ($ev['event_date']): ?><p class="field-hint">📅 <?= e($ev['event_date']) ?></p><?php endif; ?>
