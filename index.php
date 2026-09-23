@@ -48,6 +48,9 @@ $credentials = get_setting('credentials');
     <img src="/assets/images/therapy-room.png"
          alt="<?= $locale === 'en' ? 'Illustration of a calm, sunlit counseling room' : 'صورة تعبيرية لغرفة جلسات هادئة بإضاءة طبيعية' ?>"
          width="1254" height="1254" fetchpriority="high">
+    <p class="hero-art-caption" style="font-size:.78rem; color:var(--color-text-muted); text-align:center; margin-top:8px;">
+      <?= $locale === 'en' ? 'A representative image — not an actual photo of Tala\'s office.' : 'صورة تعبيرية توضيحية — مو صورة حقيقية لعيادة تالا.' ?>
+    </p>
   </div>
 </section>
 
